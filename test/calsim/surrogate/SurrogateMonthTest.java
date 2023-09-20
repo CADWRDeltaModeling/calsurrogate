@@ -17,7 +17,7 @@ class SurrogateMonthTest {
 		int nDayHist = 118;
 		Surrogate mock = new MockSurrogate(nDayHist);
 		int nMonthHist = 5;
-		DisaggregateMonths disagg = new DisaggregateMonths(nMonthHist);
+		DisaggregateMonths disagg = new DisaggregateMonthsSpline(nMonthHist);
 		AggregateMonths agg = AggregateMonths.AggType.MONTHLY_MEAN.getAggregator();
 		SurrogateMonth annMonth = new SurrogateMonth(disagg, mock, agg); 
 
