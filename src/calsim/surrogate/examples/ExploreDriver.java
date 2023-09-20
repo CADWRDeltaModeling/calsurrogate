@@ -9,7 +9,7 @@ import calsim.surrogate.TensorWrapper;
 public class ExploreDriver {
 
 	public static void main(String[] argv) {
-		String fname = "F:/projects/ann_workspace/calsurrogate/ann_calsim-main/calsim_delta_outflow_estimator";
+		String fname = "./ann_calsim-main/calsim_delta_outflow_estimator";
 		String[] tensorNames =  {"serving_default_input_preprocessed_input:0"};
 		String[] tensorNamesInt = new String[0];
 		String outName = "StatefulPartitionedCall:0";
