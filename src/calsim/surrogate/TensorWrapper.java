@@ -2,7 +2,10 @@ package calsim.surrogate;
 
 import java.util.ArrayList;
 
-import org.tensorflow.*;
+import org.tensorflow.SavedModelBundle;
+import org.tensorflow.Session;
+import org.tensorflow.Tensor;
+import org.tensorflow.TensorFlow;
 import org.tensorflow.Session.Runner;
 
 /*
