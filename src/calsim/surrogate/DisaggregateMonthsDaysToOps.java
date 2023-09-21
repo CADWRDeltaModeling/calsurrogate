@@ -1,10 +1,22 @@
 package calsim.surrogate;
 
+/**
+ * Disaggregation that receives monthly values as "number of days opererating" 
+ * and installs the startOp for that many days and endOp for the rest of the days
+ * in the month 
+ */	
 public class DisaggregateMonthsDaysToOps extends DisaggregateMonths {
 	
+
+
+	private double startOp;
+	private double endOp;
 	
-	public DisaggregateMonthsDaysToOps(int nMon) {
+	
+	public DisaggregateMonthsDaysToOps(int nMon, double startOp, double endOp) {
 		super(nMon);
+		this.startOp = startOp;
+		this.endOp = endOp;
 	}
 
 	/** Disaggregate monthly data looking back in time
@@ -12,53 +24,39 @@ public class DisaggregateMonthsDaysToOps extends DisaggregateMonths {
 	 */
 	public double[] apply(int year, int month, double[] dataRev) {
 		double[][] ts = asIrregArray(year,month,dataRev);
-		double xNewMax = ts[0][this.getNMonth()];
+		int xNewMax = (int) ts[0][this.getNMonth()];
+		int nCoarse = ts[0].length;
         double xNewMin = ts[0][0];
-
+        double[] out = new double[xNewMax];
+        for (int iCoarse = 0; iCoarse< (nCoarse-1); iCoarse++) {
+            int istart = (int) ts[0][iCoarse];
+            int ilast = istart + (int) ts[1][iCoarse];
+            int ilen = (int) ts[0][iCoarse+1];
+        	for (int iFine = istart; iFine < ilast; iFine++) {
+        		out[iFine] = getStartOp();
+            }
+        	for (int iFine = ilast; iFine < ilen; iFine++) {
+        		out[iFine] = getEndOp();
+        	}
+        }
         
-		
-
-		
-		
-		
-		/*
-		  do i=tim0,(tim1-1)              ! last portion of 4th previous month
-				    if ( i < (dxc_prv0-(mon0-tim1))) then
-				      dxc(i) = 1.0 !shengjun changed to make 1 as DXC open 8/2/2004
-				    else
-				      dxc(i) = 0.0 !shengjun changed to make 0 as DXC close 8/2/2004
-				    end if
-				  end do
-				  DO i=tim1,(tim2-1)              ! 3rd previous month
-				    if ( i-tim1 < dxc_prv1) then
-				      dxc(i) = 1.0 !shengjun changed to make 1 as DXC open 8/2/2004
-				    else
-				      dxc(i) = 0.0 !shengjun changed to make 0 as DXC close 8/2/2004
-				    end if
-				  END DO
-				  DO i=tim2,(tim3-1)              ! 2nd previous month
-				    if ( i-tim2 < dxc_prv2) then
-				      dxc(i) = 1.0 !shengjun changed to make 1 as DXC open 8/2/2004
-				    else
-				      dxc(i) = 0.0 !shengjun changed to make 0 as DXC close 8/2/2004
-				    end if
-				  END DO
-				  DO i=tim3,(tim4-1)              ! previous month
-				    if ( i-tim3 < dxc_prv3) then
-				      dxc(i) = 1.0 !shengjun changed to make 1 as DXC open 8/2/2004
-				    else
-				      dxc(i) = 0.0 !shengjun changed to make 0 as DXC close 8/2/2004
-				    end if
-				  END DO
-				  DO i=tim4,tim5                  ! current month
-				    if ( i-tim4 < dxc_prv4) then
-				      dxc(i) = 1.0 !shengjun changed to make 1 as DXC open 8/2/2004
-				    else
-				      dxc(i) = 0.0 !shengjun changed to make 0 as DXC close 8/2/2004
-				    end if
-				  END DO*/
-		double[] out = new double[1]; 
 		return out;
 	}
 
+	public double getStartOp() {
+		return startOp;
+	}
+
+	public void setStartOp(double startOp) {
+		this.startOp = startOp;
+	}
+
+	public double getEndOp() {
+		return endOp;
+	}
+
+	public void setEndOp(double endOp) {
+		this.endOp = endOp;
+	}	
+	
 }

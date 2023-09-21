@@ -7,6 +7,8 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({ AggregateMonthsTest.class, CircleLineSearchableTest.class, 
 	             ConservativeSplineTest.class,
 		         DisaggregateMonthsTest.class, 
+		         DisaggregateMonthsDaysToOpsTest.class,
+		         DisaggregateMonthsRepeatTest.class,
 		         MockSurrogateTest.class, 
 		         TensorCalsimTest.class })
 public class AllTests {
