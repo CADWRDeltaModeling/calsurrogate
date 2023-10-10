@@ -12,7 +12,7 @@ class TensorCalsimTest {
 
 	@Test
 	void testRSAC092() {
-	    String fname = "./ann_calsim-main/RSAC092";
+	    String fname = "./ann_calsim-main/emmaton";
 	    String[] tensorNames =  {"serving_default_input_preprocessed_input:0"};
 	    String[] tensorNamesInt = new String[0];
 	    String outName = "StatefulPartitionedCall:0";
