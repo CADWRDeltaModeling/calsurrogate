@@ -56,7 +56,6 @@ class MonthlyMean extends AggregateMonths{
 		startIndex = 0;
 		stopIndex =endDayOfMonth; // TODO THis won't work for averages that reach back before first
 		for (int i=startIndex; i<stopIndex; i++) {
-			System.out.println(daily[i]);
 			total +=daily[i];
 		}
 		return total/((double) (endDayOfMonth-startDayOfMonth +1));

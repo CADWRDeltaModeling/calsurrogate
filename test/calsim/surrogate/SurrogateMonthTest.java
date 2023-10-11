@@ -1,9 +1,11 @@
 package calsim.surrogate;
 
+
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import org.junit.jupiter.api.Test;
+
 
 class SurrogateMonthTest {
 
@@ -14,7 +16,10 @@ class SurrogateMonthTest {
 		int nDayHist = 118;
 		Surrogate mock = new MockSurrogate(nDayHist);
 		int nMonthHist = 5;
-		DisaggregateMonths disagg = new DisaggregateMonthsSpline(nMonthHist);
+		DisaggregateMonths spline = new DisaggregateMonthsSpline(5);
+		DisaggregateMonths repeat = new DisaggregateMonthsRepeat(5);
+		DisaggregateMonths daysOps = new DisaggregateMonthsDaysToOps(5,1.,0.);
+		DisaggregateMonths[] disagg = {spline,spline,repeat,repeat,repeat};
 		AggregateMonths agg = AggregateMonths.AggType.MONTHLY_MEAN.getAggregator();
 		SurrogateMonth annMonth = new SurrogateMonth(disagg, mock, agg); 
 

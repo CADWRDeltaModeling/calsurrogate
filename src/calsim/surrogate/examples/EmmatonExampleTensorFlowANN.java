@@ -1,5 +1,6 @@
 package calsim.surrogate.examples;
 
+import calsim.surrogate.*;
 import java.util.ArrayList;
 
 import calsim.surrogate.*;
@@ -16,8 +17,8 @@ public class EmmatonExampleTensorFlowANN {
 
 		String[] tensorNamesInt = new String[0];
 		String outName = "StatefulPartitionedCall:0";
-        DailyToSurrogate dayToANN = DefaultDailyToSurrogate();
-		Surrogate wrap = new TensorWrapper(fname,tensorNames,tensorNamesInt,outName,null);	
+        DailyToSurrogate dayToANN = new BlockDailyToSurrogate(8,10,11);
+		Surrogate wrap = new TensorWrapper(fname,tensorNames,tensorNamesInt,outName,dayToANN);	
 		return wrap;
 	}
 
@@ -35,21 +36,18 @@ public class EmmatonExampleTensorFlowANN {
 	 * @param cycle
 	 * @return 2D Array of monthly aggregated results with dimensions of batch size by number of stations predicted 
 	 */
-	//public double[][] annMonth(ArrayList<double[][]> monthlyInputs, int location, int year, int month, int cycle) {
-		
- 
 
     public static SurrogateMonth emmatonSurrogateMonth() {
-	 
-        DisaggregateMonths disag = new DisaggregateMonthsRepeat(5);
+		DisaggregateMonths spline = new DisaggregateMonthsSpline(5);
+		DisaggregateMonths repeat = new DisaggregateMonthsRepeat(5);
+		DisaggregateMonths daysOps = new DisaggregateMonthsDaysToOps(5,1.,0.);
+		DisaggregateMonths[] disagg = {spline,spline,daysOps,spline,spline,spline,repeat};
         Surrogate emm = emmatonANN();
         AggregateMonths agg = AggregateMonths.AggType.MONTHLY_MEAN.getAggregator();
-    	SurrogateMonth month = new SurrogateMonth(disag, emmatonANN(), agg);
+    	SurrogateMonth month = new SurrogateMonth(disagg, emmatonANN(), agg);
     	return month;
 
     }
- 
-    
-    
+  
     
 }

@@ -48,7 +48,7 @@ class TensorCalsimTest {
     	double[][] sac = {{7771,6990.,10500.,9500.,18000.}};
 		double[][] exp =  {{3500.,2750.,6300.,4200.,11700.}};
 
-		double[][]	dcc = {{0.0,0.0,0.0,30.,31.}};
+		double[][] dcc = {{0.0,0.0,0.0,30.,31.}};
 		double[][] net_dcd = {{1632.,1360.,895.,2029.,2565.}};
 		double[][] sjr =     {{1277.,1347.,1205.,1120.,920.}};
 		double[][] tide =	{{6.560,6.184,5.508,5.083,6.913}};
@@ -67,6 +67,8 @@ class TensorCalsimTest {
     	int year = 1994;  // Ficticious
     	int month = 5; // Ficticious. When?
     	int cycle = 2;
+    	
+
     	double[][] out = surrogateMonth.annMonth(floatInput, location,year,month,cycle);
     	System.out.println("ANN Month: "+ out[0][0]);
 

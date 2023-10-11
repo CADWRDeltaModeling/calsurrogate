@@ -27,12 +27,6 @@ public class LinearConstraint {
 		// centered estimate first then sac and exports negative and positive in that order
 		final int NPERTCASE = 5;
 		final double[] perturb = {-1.,1.};
-		//final double NONSENSE = -9999999.;
-		//final int SACNDX=0;  // TODO HARDWIRED
-		//final int EXPNDX=1;  // TODO HARDWIRED
-		//double[] ddQ = {NONSENSE,NONSENSE};
-		//double[] pOut = {NONSENSE,NONSENSE};
-		//[] qIn = {NONSENSE,NONSENSE};
 		int nLoc = monthlyInputs.size();
 		//nBatch = monthlyInputs.get(0).length; //TODO this should be checked to be one until handled 
 		int nTime = monthlyInputs.get(0)[0].length;

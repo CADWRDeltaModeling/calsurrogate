@@ -10,12 +10,13 @@ import java.util.ArrayList;
 public class SurrogateMonth
  {
 
-	private DisaggregateMonths disagg;
+	private DisaggregateMonths[] disagg;
 	private AggregateMonths agg;
 	private Surrogate daily;
 	
 	
-	public SurrogateMonth(DisaggregateMonths disagg,Surrogate daily, AggregateMonths agg) {
+	public SurrogateMonth(DisaggregateMonths[] disagg,Surrogate daily, AggregateMonths agg) {
+	    // TODO test number of inputs equals length of disaggregator
 		this.disagg = disagg;
 		this.daily = daily;
 		this.agg = agg;
@@ -36,7 +37,7 @@ public class SurrogateMonth
 	 */
 	public double[][] annMonth(ArrayList<double[][]> monthlyInputs, int location, int year, int month, int cycle) {
 		
-	
+
 		ArrayList<double[][]> dailyInputs = new ArrayList<double[][]>();
 		int nvar = monthlyInputs.size();
 		int nbatch = monthlyInputs.get(0).length;
@@ -46,7 +47,7 @@ public class SurrogateMonth
 		for (int ivar=0; ivar<nvar; ivar++) {
 			double[][] newInput = new double[nbatch][];
 			for (int jbatch=0; jbatch<nbatch; jbatch++) {
-				newInput[jbatch] =  disagg.apply(year, month, monthlyInputs.get(ivar)[jbatch]);
+				newInput[jbatch] =  disagg[ivar].apply(year, month, monthlyInputs.get(ivar)[jbatch]);
 			}
 			dailyInputs.add(newInput);
 		}
@@ -58,7 +59,7 @@ public class SurrogateMonth
         	tide[jbatch] = new double[tide[0].length];
 		    System.arraycopy(tide[0], 0, tide[jbatch], 0, tide[0].length);
         }        
-        int indexStart = disagg.offsetFirstMonth(year, month);
+        int indexStart = disagg[0].offsetFirstMonth(year, month);
         
         // Slide window on the daily inputs and generate daily output
         // The indexes in the ArrayList represent stations or output locations
@@ -72,7 +73,6 @@ public class SurrogateMonth
         // Perform requested summary statistic that recovers a monthly value
         for (int iLoc = 0; iLoc < nLoc; iLoc++) {
              for (int ibatch = 0; ibatch<nbatch; ibatch++) {
-         		System.out.println("iloc "+iLoc + " "+ibatch+" ");	
                  monthlyOut[ibatch][iLoc] = agg.aggregate(dailyOutputs.get(iLoc)[ibatch], indexStart,1,daysInMonth);            	 
              }
         }
@@ -84,7 +84,7 @@ public class SurrogateMonth
 	// applying the ANN, and storing the output as an array of daily outputs
 	public ArrayList<double[][]> timeStep(ArrayList<double[][]> dailyInputs,
 			int startDayIndex,int location,int year,int month) {    
-		int daysInMonth = disagg.daysMonth(year, month)[0];
+		int daysInMonth = disagg[0].daysMonth(year, month)[0];
 		int nbatch = dailyInputs.get(0).length; //TODO safety check
 		int nvar = dailyInputs.size();
 		int stopIndex = startDayIndex + daysInMonth;
@@ -126,8 +126,6 @@ public class SurrogateMonth
 			double[][] dailyOut = new double[nbatch][daysInMonth];
 			for (int ibatch=0; ibatch<nbatch ; ibatch++) {
 				for (int jdate = 0; jdate < daysInMonth; jdate++) {
-					System.out.println("final " + ibatch + " "+jdate);
-					System.out.println(out[ibatch*daysInMonth+jdate][0]);
 					dailyOut[ibatch][jdate] = (double) out[ibatch*daysInMonth+jdate][iLoc];  //TODO make double?
 
 				}
