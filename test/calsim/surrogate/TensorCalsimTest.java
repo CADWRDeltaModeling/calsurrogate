@@ -1,9 +1,8 @@
 package calsim.surrogate;
 
 import static org.junit.jupiter.api.Assertions.*;
-
 import org.junit.jupiter.api.Test;
-
+import calsim.surrogate.examples.EmmatonExampleTensorFlowANN;
 import java.util.ArrayList;
 
 
@@ -12,18 +11,8 @@ class TensorCalsimTest {
 	
     @Test	
 	void testEmmatonANN() {
-		String fname = "./ann_calsim-main/emmaton";
-		String[] tensorNames =  {"serving_default_sac_input:0",
-				"serving_default_exports_input:0","serving_default_dcc_input:0",
-				"serving_default_net_dcd_input:0","serving_default_sjr_input:0",
-				"serving_default_tide_input:0","serving_default_smscg_input:0",
-				};
-		
-		String[] tensorNamesInt = new String[0];
-		String outName = "StatefulPartitionedCall:0";
-
-		Surrogate wrap = new TensorWrapper(fname,tensorNames,tensorNamesInt,outName,null);
-		System.out.println("Success creating wrapper");
+		Surrogate wrap = EmmatonExampleTensorFlowANN.emmatonANN();
+        
 		long[][] inpInt = {{}};
 
 		double[][] sac = {{7717.142,7716.127,7715.153,7714.168,7713.113,7711.911,7710.454,7708.580,7413.865,6964.834,6990.893,9085.646,10543.928,10538.482,9573.437,9400.652,10259.991,19202.160}};
@@ -51,4 +40,36 @@ class TensorCalsimTest {
 			}
 		}
   }
+    
+    @Test
+    void testEmmatonSurrogateMonth() {
+    	SurrogateMonth surrogateMonth=EmmatonExampleTensorFlowANN.emmatonSurrogateMonth();
+
+    	double[][] sac = {{7771,6990.,10500.,9500.,18000.}};
+		double[][] exp =  {{3500.,2750.,6300.,4200.,11700.}};
+
+		double[][]	dcc = {{0.0,0.0,0.0,30.,31.}};
+		double[][] net_dcd = {{1632.,1360.,895.,2029.,2565.}};
+		double[][] sjr =     {{1277.,1347.,1205.,1120.,920.}};
+		double[][] tide =	{{6.560,6.184,5.508,5.083,6.913}};
+		double[][] smscg =	{{0.000,0.000,0.000,1.000,1.000}};
+		
+		ArrayList<double[][]> floatInput = new ArrayList<double[][]>();
+		floatInput.add(sac);
+		floatInput.add(exp);
+		floatInput.add(dcc);
+		floatInput.add(net_dcd);
+		floatInput.add(sjr);
+		floatInput.add(tide);
+		floatInput.add(smscg);
+
+    	int location = 0;
+    	int year = 1994;  // Ficticious
+    	int month = 5; // Ficticious. When?
+    	int cycle = 2;
+    	double[][] out = surrogateMonth.annMonth(floatInput, location,year,month,cycle);
+    	System.out.println("ANN Month: "+ out[0][0]);
+
+    }  
+    
 }
