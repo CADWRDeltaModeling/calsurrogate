@@ -20,25 +20,42 @@ public class LinearConstraint {
 	 * @param aveType Basis of summarizing water quality compliance.
 	 * @return void
 	 */
-	public double[][] linearize( ArrayList<double[][]> monthlyInputs, int ndxSac, int ndxExp, 
+	public double[][] linearize( ArrayList<double[][]> monthlyInputs,  
 			int year, int month, int cycle, 
 			int constraintComponent, int location, int aveType, double targetWQ) {
 
+		double[][] valGradient = gradient(monthlyInputs,year,month);
+		return valGradient;		
+	}
+
+	/**
+	 * 
+	 * @param monthlyInputs Monthly values, with locations as the ArrayList members and the other dims
+	 * are batch and time lags in that order
+	 * @param year analyzed
+	 * @param month analyzed
+	 * @return 2D array with the first dimension being output locations and second dimension being the 
+	 * value returned whcih is 0 for value, 1 as derivative w.r.t. Sac (or first input) and 2 for 
+	 * derivative w.r.t. exports (or second input)
+	 */
+	public double[][] gradient( ArrayList<double[][]> monthlyInputs, int year, int month) {
+
 		// centered estimate first then sac and exports negative and positive in that order
 		final int NPERTCASE = 5;
-		final double[] perturb = {-1.,1.};
+		final double[] perturb = {-1.0,1.0};
 		int nLoc = monthlyInputs.size();
 		//nBatch = monthlyInputs.get(0).length; //TODO this should be checked to be one until handled 
 		int nTime = monthlyInputs.get(0)[0].length;
 
 
 		ArrayList<double[][]> perturbedInputs = new ArrayList<double[][]>();
-		
+
 		// Initialize everything to be the same as input monthly values
 		for (int iLoc = 0; iLoc < nLoc; iLoc++) {
 			double[][] perturbedData = new double[NPERTCASE][nTime];
+			double[][] src = monthlyInputs.get(iLoc);
 			for (int iPert=0; iPert < NPERTCASE; iPert++) {
-				System.arraycopy(monthlyInputs.get(iLoc), 0, perturbedData[iPert],0,nTime);
+				System.arraycopy(src[0], 0, perturbedData[iPert],0,nTime);
 			}
 			perturbedInputs.add(perturbedData);
 		}
@@ -55,26 +72,23 @@ public class LinearConstraint {
 		}
 
 		// monthOut has dimensions of batch size (5) by number of stations predicted by ANN
-		double[][] monthOut = annMonth.annMonth(perturbedInputs, location, year, month, cycle);
+		double[][] monthOut = annMonth.annMonth(perturbedInputs, year, month);
 
 
-		// Derivative of each location with respect to Sac and Exp
-		double[][] ddQAll = new double[nLoc][2];  
+		// Derivative of each output location with respect to Sac and Exp
+		// TODO it would be nice to query this
+		int nOut = monthOut[0].length;
+		double[][] ddQAll = new double[nOut][3];  
 		double dQ = perturb[1]-perturb[0];
-		for (int iLoc=0; iLoc<nLoc; iLoc++) {
-			double dEC = monthOut[2][iLoc]-monthOut[1][iLoc]; 
-			ddQAll[iLoc][0] = dEC/(2.*dQ);   // derivative of location iLoc EC w.r.t. Sac flow
-			dEC = monthOut[4][iLoc]-monthOut[3][iLoc]; 
-			ddQAll[iLoc][1] = dEC/(2.*dQ);    // derivative of location iloc EC w.r.t. Exports
+
+		for (int iOut=0; iOut<nOut; iOut++) {
+			ddQAll[iOut][0]= monthOut[0][iOut];
+			double dEC = monthOut[2][iOut]-monthOut[1][iOut]; 
+			ddQAll[iOut][1] = dEC/(dQ);   // derivative of location iLoc EC w.r.t. Sac flow
+			dEC = monthOut[4][iOut]-monthOut[3][iOut]; 
+			ddQAll[iOut][2] = dEC/(dQ);    // derivative of location iloc EC w.r.t. Exports
 		}
-        return ddQAll;
-		//pOut[ip] = -9999.; annMonth.annMonth(monthlyInputs, location, year, month, cycle); //TODO
-		// Now we have the derivatives of the objective (including all the averaging of output
-		// with respect to Sac (index 0 of ddQ) and Exports (index 1)
-		// What remains is to convert this to a constraint.
-		// We will write this around Qsac0 ad Qexp0 
-		// (Qsac - Qsac0)*ddQ[0] + (Qexp - Qexp0)*ddQ[1] < ECTARGET
-		// Rearranging this gives Qsac*ddQ[0] + Qexp*ddQ[1] < ECTARGET + Qsac0*ddQ[0] + Qexp0*ddQ[1]
-		//if(constraintComponent ==) /// return the corresponding component	
-	}
+		return ddQAll;
+	}	
+
 }

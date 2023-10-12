@@ -22,8 +22,7 @@ public class SurrogateMonth
 		this.agg = agg;
 	}
 
-	
-	
+
 	/**
 	 * Complete application of the ANN or other surrogate. 
 	 * Disaggregates monthly inputs to daily, marches through days repackaging the inputs
@@ -35,8 +34,7 @@ public class SurrogateMonth
 	 * @param cycle
 	 * @return 2D Array of monthly aggregated results with dimensions of batch size by number of stations predicted 
 	 */
-	public double[][] annMonth(ArrayList<double[][]> monthlyInputs, int location, int year, int month, int cycle) {
-		
+	public double[][] annMonth(ArrayList<double[][]> monthlyInputs, int year, int month) {
 
 		ArrayList<double[][]> dailyInputs = new ArrayList<double[][]>();
 		int nvar = monthlyInputs.size();
@@ -54,7 +52,8 @@ public class SurrogateMonth
         
 		// append exogenous tide to last slot in the array in the array
 		double[][] tide = new double[nbatch][];
-		tide[0] = SFTide.getInstance().arrayFrom(year, month, 1, cycle); // why cycle??
+		int nDay = 900; //TODO This is a placeholder, not correct
+		tide[0] = SFTide.getInstance().arrayFrom(year, month, 1, nDay); 
         for (int jbatch=1; jbatch<nbatch; jbatch++) {
         	tide[jbatch] = new double[tide[0].length];
 		    System.arraycopy(tide[0], 0, tide[jbatch], 0, tide[0].length);
@@ -66,7 +65,7 @@ public class SurrogateMonth
         // The first index of the double[][] represent the original input batches
         // The second index of the double[][], which will be collapsed in the next step,
         // represent days in the output where indexStart again represents the first of the month
-        ArrayList<double[][]> dailyOutputs = timeStep(dailyInputs,indexStart,location,year,month);
+        ArrayList<double[][]> dailyOutputs = timeStep(dailyInputs,indexStart,year,month);
         int nLoc = dailyOutputs.size();  // others are original batch times days in month
         int daysInMonth = 30;    // TODO hardwire
         double[][] monthlyOut=new double[nbatch][nLoc];
@@ -83,7 +82,7 @@ public class SurrogateMonth
 	// repacking the daily data over the window into the form expected by the ANN
 	// applying the ANN, and storing the output as an array of daily outputs
 	public ArrayList<double[][]> timeStep(ArrayList<double[][]> dailyInputs,
-			int startDayIndex,int location,int year,int month) {    
+			int startDayIndex,int year,int month) {    
 		int daysInMonth = disagg[0].daysMonth(year, month)[0];
 		int nbatch = dailyInputs.get(0).length; //TODO safety check
 		int nvar = dailyInputs.size();

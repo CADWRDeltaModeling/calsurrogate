@@ -46,11 +46,10 @@ class SurrogateMonthTest {
 		}
 		
 
-		int loc = 0;
 		int year = 2010;
 		int month = 10;
-		int cycle = 22;
-		double[][] monthly =  annMonth.annMonth(floatInput, loc, year, month, cycle);
+
+		double[][] monthly =  annMonth.annMonth(floatInput, year, month);
 		System.out.println("ok");	
 		System.out.println(monthly.length);
 		System.out.println(monthly[1].length);
