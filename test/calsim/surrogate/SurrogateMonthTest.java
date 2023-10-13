@@ -20,7 +20,7 @@ class SurrogateMonthTest {
 		DisaggregateMonths repeat = new DisaggregateMonthsRepeat(5);
 		DisaggregateMonths daysOps = new DisaggregateMonthsDaysToOps(5,1.,0.);
 		DisaggregateMonths[] disagg = {spline,spline,repeat,repeat,repeat};
-		AggregateMonths agg = AggregateMonths.AggType.MONTHLY_MEAN.getAggregator();
+		AggregateMonths agg = AggregateMonths.MONTHLY_MEAN;
 		SurrogateMonth annMonth = new SurrogateMonth(disagg, mock, agg); 
 
 		//double[][] sac = new double[1][5];

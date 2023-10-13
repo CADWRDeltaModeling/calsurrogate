@@ -14,14 +14,14 @@ class AggregateMonthsTest {
 		for (int i=0; i < data.length; i++) {
 			data[i]=(double) i;
 		}
-		AggregateMonths mave = AggregateMonths.AggType.MONTHLY_MEAN.getAggregator();
+		AggregateMonths mave = AggregateMonths.MONTHLY_MEAN;
 		System.out.println(mave.aggregate(data,85, 1, 20) );
 		
 		
-		AggregateMonths mmax = AggregateMonths.AggType.MONTHLY_MAX.getAggregator();
+		AggregateMonths mmax = AggregateMonths.MONTHLY_MAX;
 		System.out.println(mmax.aggregate(data,85, 1, 20) );
 		
-		AggregateMonths mmax14 = AggregateMonths.AggType.MONTHLY_MAX_14D.getAggregator();
+		AggregateMonths mmax14 = AggregateMonths.MONTHLY_MAX_14D;
 		System.out.println(mmax14.aggregate(data,85, 1, 20) );		
 	}
 

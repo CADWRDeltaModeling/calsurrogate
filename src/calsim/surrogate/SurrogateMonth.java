@@ -10,6 +10,7 @@ import java.util.ArrayList;
 public class SurrogateMonth
  {
 
+
 	private DisaggregateMonths[] disagg;
 	private AggregateMonths agg;
 	private Surrogate daily;
@@ -135,7 +136,15 @@ public class SurrogateMonth
 	}	
 	
 
-	
+	public Surrogate getDailySurrogate() {
+		return daily;
+	}
+
+
+	public void setDailySurrogate(Surrogate daily) {
+		this.daily = daily;
+	}
+
 	
 	
 }

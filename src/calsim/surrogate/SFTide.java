@@ -6,6 +6,9 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 
+/**
+ * Tide encapsulating external data. This isn't used yet, but it may be important for sea level rise
+ */
 public class SFTide{
     private static SFTide _instance=null;
 	private final String delimiter = ",";

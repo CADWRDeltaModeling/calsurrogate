@@ -10,7 +10,10 @@ import org.junit.platform.suite.api.Suite;
 		         DisaggregateMonthsDaysToOpsTest.class,
 		         DisaggregateMonthsRepeatTest.class,
 		         MockSurrogateTest.class, 
-		         TensorCalsimTest.class })
+		         TensorCalsimTest.class,
+		         SalinitySurrogateManagerTest.class,
+		         LinearConstraintTest.class,
+		         SurrogateMonthTest.class})
 public class AllTests {
 
 }

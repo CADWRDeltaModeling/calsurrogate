@@ -13,7 +13,7 @@ class LinearConstraintTest {
 
 
 	@Test
-	void test() {
+	void testLinearConstraint() {
 		SurrogateMonth ann = EmmatonExampleTensorFlowANN.emmatonSurrogateMonth();
 	    LinearConstraint linear = new LinearConstraint(ann);
 
@@ -43,9 +43,9 @@ class LinearConstraintTest {
 	    int constraintComponent = 0;
 	    int location = 0;
 	    int aveType = 1;
-	    double targetWQ = 2000;
+	    double targetWQ = 2500;
 	    		
-		double[][] out = linear.gradient( floatInput, year, month);
+		double[][] grad = linear.gradient( floatInput, year, month);
 		//out[0][0] is the value at location 0
 		//out[0][1] is the derivative at location 0 w.r.t. Sac
 		//out[0][2] is the derivative at location 0 w.r.t. exports
@@ -53,7 +53,8 @@ class LinearConstraintTest {
 		floatInput.get(0)[0][0] += 10.; //7781.0;
 		floatInput.get(1)[0][0] -= 10.;
 		double[][] out2 = ann.annMonth(floatInput, year, month);
-		double externalDiff = out2[0][0] - out[0][0];
-		assertEquals(externalDiff,out[0][1]*10.-out[0][2]*10.,0.1);
+		double externalDiff = out2[0][0] - grad[0][LinearConstraint.VAL_NDX];
+		assertEquals(externalDiff,grad[0][LinearConstraint.DSAC_NDX]*10.-grad[0][LinearConstraint.DEXP_NDX]*10.,0.1);	
+		
 	}
 }

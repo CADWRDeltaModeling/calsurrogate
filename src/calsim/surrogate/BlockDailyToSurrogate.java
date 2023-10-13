@@ -1,7 +1,8 @@
 package calsim.surrogate;
 
 /**
- * Implements the traditional input time series aggregation common for CalSIM ANNs
+ * This repackages the daily flow history in the aggregation common for CalSIM ANNs,
+ * which is 8 single days and 10 11-day averages looking back in time.
  */
 public class BlockDailyToSurrogate implements DailyToSurrogate{
 
@@ -20,7 +21,7 @@ public class BlockDailyToSurrogate implements DailyToSurrogate{
 	/**
 	 * The traditional CalSIM ANN packages
 	 *  the daily data as 7 individual daily values plus 10 
-	 * aggregations of 10 days apiece.
+	 * aggregations of 11 days apiece.
 	 * 
 	 * @param history
 	 * @param extData

@@ -1,158 +1,152 @@
 package calsim.surrogate.examples;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
 
 import calsim.surrogate.*;
 
+class SurrogateIdentifier {
+	Integer location;
+	Integer aveType;
 
-	
+	public SurrogateIdentifier(int location, int aveType) {
+		location = location;
+		aveType = aveType;
+	}
 
+	@Override
+	public int hashCode() {
+		return Objects.hash(aveType, location);
+	}
 
-/*
-1 = Jersey Point
-2 = Contra Costa - Rock Slough
-3 = Emmaton
-4 = Antioch
-5 = Collinsville
-6 = Chipps Island
-7 = Los Vaqueros Intake
-8 = Middle River
-9 = Victoria Intake
-10 = CVP Intake
-11 = CCFB
-12 = CCFB Intake
-20 = Beldan
-21 = Martinez	
-}*/
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SurrogateIdentifier other = (SurrogateIdentifier) obj;
+		return Objects.equals(aveType, other.aveType) && Objects.equals(location, other.location);
+	}
 
+}
 
+/**
+ * The SalinitySurrogateManager is a singleton meant to be subclassed and used
+ * as a delegate for calls coming from CalSIM The functions that it performs
+ * include: 1) tracking which surrogate is called for which location and 2)
+ */
+public enum SalinitySurrogateManager {    // ENUM is used to ensure singleton
+	INSTANCE;
 
+	/*
+	 * 1 = Jersey Point 2 = Contra Costa - Rock Slough 3 = Emmaton 4 = Antioch 5 =
+	 * Collinsville 6 = Chipps Island 7 = Los Vaqueros Intake 8 = Middle River 9 =
+	 * Victoria Intake 10 = CVP Intake 11 = CCFB 12 = CCFB Intake 20 = Beldan 21 =
+	 * Martinez }
+	 */
+	// Only Emmaton in prototype
+	public final int JER_CALSIM = 1; // Jersey Point
+	public final int RSL_CALSIM = 2; // Rock Slough
+	public final int EMM_CALSIM = 3; // Emmaton
+	public final int ANH_CALSIM = 4; // Antioch
+	public final int CLL_CALSIM = 5; // Collinsville
+	public final int MAL_CALSIM = 6; // Mallard is Chipps
+	public final int BDL_CALSIM = 20; // Beldons Landing
 
-public class SalinitySurrogateManager {
+	// Only Monthly mean
+	public final int MEAN = 0; // TODO this might not be right. Check WRESL
 
-	final HashMap<Integer,Surrogate>  surrogateForSite = new HashMap<Integer,Surrogate>();
-	final HashMap<RunRecord,double[][]> cachedLinegen = new HashMap<RunRecord,double[][]>();
-	final HashMap<RunRecord,double[][]> cachedSurrogate = new HashMap<RunRecord,double[][]>();
-	
+	final HashMap<SurrogateIdentifier, SurrogateMonth> surrogateForLoc = new HashMap<SurrogateIdentifier, SurrogateMonth>();
+	final HashMap<Integer, Integer> calsimToSurrogateNdx = new HashMap<Integer, Integer>();
+	final HashMap<RunRecord, double[][]> cachedGradient = new HashMap<RunRecord, double[][]>();
+	final HashMap<RunRecord, double[][]> cachedSurrogate = new HashMap<RunRecord, double[][]>();
+
+	SalinitySurrogateManager() {
+		init();
+	}
+
 	public void init() {
-		
-		String[] tensorNames = {"sac flow"};
-		String[] tensorNamesInt = null;		
-	    String outName = "outname"; //TODO?
-	    BlockDailyToSurrogate blocks = new BlockDailyToSurrogate(8,10,11);
-	    DailyToSurrogate[] dataToSurrogates = {blocks,blocks,blocks,blocks,
-	    		                               blocks,blocks,blocks};
-		
-        Surrogate jersey = new TensorWrapper("path/to/jersey",
-    			           tensorNames,
-    			           tensorNamesInt,
-    			          "jersey",
-    			          dataToSurrogates[0]);
-		
-        
-	    surrogateForSite.put(Integer.valueOf(1),jersey);
-
-	    
-	    /*
-		public SurrogateMonth(DisaggregateMonths disagg,Surrogate daily, AggregateMonths agg) {
-			this.disagg = disagg;
-			this.daily = daily;
-			this.agg = agg;
-		}*/	    
-	    
+		SurrogateMonth emmMonth = EmmatonExampleTensorFlowANN.emmatonSurrogateMonth();
+		setSurrogateForSite(EMM_CALSIM,MEAN,emmMonth);
+		calsimToSurrogateNdx.put(EMM_CALSIM, 0);
 		
 	}
-	
-	
-	public float annlinegen_a(float[] Qsac_prv, float[] Qexp_prv, 
-			float[] Qsjr_prv, float Qsjr_fut, 
-			float[] DXC_prv,  float DXC_fut, 
-			float[] DICU_prv, float DICU_fut, 
-			float[] Qsac_oth_prv, float Qsac_oth_fut, 
-			float[] Qexp_oth_prv, float Qexp_oth_fut, 
-			float[] VernEC_prv, float VernEC_fut, 
-			float[] mon, float ECTARGET, 
-			float linear1,float linear2, 
-			int location, int variable, 
-			int ave_type, int currMonth, 
-			int currYear, int ForceOption) {
 
-		Surrogate s = surrogateForLoc(location);
+
+	public void setSurrogateForSite(int location, int aveType, SurrogateMonth surrogateMonth) {
+		SurrogateIdentifier hasher = new SurrogateIdentifier(location, aveType);
+		surrogateForLoc.put(hasher, surrogateMonth);
+	}
+
+	public SurrogateMonth getSurrogateForSite(int location, int aveType) {
+		SurrogateIdentifier hasher = new SurrogateIdentifier(location, aveType);
+		return surrogateForLoc.get(hasher);
+	}
+
+
+
+	public double lineGenImpl(ArrayList<double[][]> monthlyInput, int location, int variable, int ave_type, int month,
+			int year) {
+
+		double sac0 = 0.; // TODO
+		double exp0 = 0.; // TODO
+		double targetWQ = 0.0; // TODO
+		double[][] grad=null;
+		int siteNDX = 0; // TODO
+
+		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
+		LinearConstraint linear = new LinearConstraint(sm); // TODO Alternatively a lot of LInearConstraint could be
+															// static
+
 		int cyclePlaceholder = 0;
-		RunRecord rec = new RunRecord(s,(double) (double) Qsac_prv[0],Qexp_prv[0], 
-					0,0,currYear, currMonth, cyclePlaceholder,ave_type);
-				
-		if (cachedLinegen.containsKey(rec)){
-			// getLinearization;
-		}else {
-			//doLinegen
-			//cache
+		// TODO what are the 0,0 on second line?
+		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, 0, 0, year, month, cyclePlaceholder,
+				ave_type);
+
+		if (cachedGradient.containsKey(rec)) {
+			int index = 0; // TODO indexForLocation
+			grad = cachedGradient.get(rec);
+
+		} else {
+			// Calculate and cache
+			double[][] gradient = linear.gradient(monthlyInput, year, month);
+			cachedGradient.put(rec, gradient); // Caches for next time
+
 		}
-		return (float)-99999;
+		double[] constraint = linear.formulateConstraint(grad[siteNDX],targetWQ,sac0, exp0);
+
+		return constraint[variable];
 
 	}
-	
 
-	public float annec_a(float[] Qsac_prv, float[] Qexp_prv, 
-			float[] Qsjr_prv, float Qsjr_fut, 
-			float[] DXC_prv,  float DXC_fut, 
-			float[] DICU_prv, float DICU_fut, 
-			float[] Qsac_oth_prv, float Qsac_oth_fut, 
-			float[] Qexp_oth_prv, float Qexp_oth_fut, 
-			float[] VernEC_prv, float VernEC_fut, 
-			float[] mon, float ECTARGET, 
-			float linear1,float linear2, 
-			int location, int variable, 
-			int ave_type, int currMonth, 
-			int currYear, int ForceOption) {
-		
 
-		Surrogate s = surrogateForLoc(Integer.valueOf(location));
-		int cyclePlaceholder = 0;
-		RunRecord rec = new RunRecord(s, (double) Qsac_prv[0],(double) Qexp_prv[0], 
-				0,0,currYear, currMonth, cyclePlaceholder,ave_type);
-			
-	    if (cachedSurrogate.containsKey(rec)){
-	    	double[][] cached = cachedSurrogate.get(rec);
-	    	int locIndex = 2; // TODO array index from calsim location
-			return (float) cached[0][0]; //cachedSurrogate(rec,location); // TODO which variable??
-		}else {
-			AggregateMonths agg = AggregateMonths.AggType.MONTHLY_MEAN.getAggregator(); //TODO change to actual and do lookup
-			DisaggregateMonths disagg = new DisaggregateMonthsSpline(5); // TODO different for each
-			//TODO erased this to compile
-			//Surrogate monthly = new SurrogateMonth(disagg, s, agg); // TODO different from each variable. Coordinate with init()
-			//double[][] out = monthly.estimate(null, null); // TODO generate arguments for ANNMonth
-			//cachedSurrogate.put(rec, monthly);
-			int locIndex = 2; // TODO array index from calsim
-			//return (float) monthly[0][locIndex]
-		    return 909999997.f;
+
+	public float annEC(ArrayList<double[][]> monthly, int location, int variable, 
+				int ave_type, int month, int year) {	
+			SurrogateMonth sm = getSurrogateForSite(location,ave_type);
+			int cyclePlaceholder = 0;
+			double sac0=0.;
+			double exp0=0.;
+			RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, 
+					0,0,year, month, cyclePlaceholder,ave_type);
+
+			if (cachedSurrogate.containsKey(rec)){
+				double[][] cached = cachedSurrogate.get(rec);
+				int locIndex = 2; // TODO array index from calsim location
+				return (float) cached[0][0]; //cachedSurrogate(rec,location); // TODO which variable??
+			}else if (cachedGradient.containsKey(rec)){
+				double[][] cached = cachedGradient.get(rec);
+				cachedSurrogate.put(rec,cached);
+				return (float) cached[0][0];
+			}else{
+				double[][] eval = sm.annMonth(monthly,year,month);
+				((HashMap<RunRecord, double[][]>) cachedSurrogate).put(rec,eval); 
+				return (float) eval[0][0];
+			}
 		}
-	}
-	
-	
-	
-	
-    public float cachedSurrogate(){ return (float) 0.;}
-	
-	public Surrogate surrogateForLoc(int loc) {
-		return surrogateForLoc(Integer.valueOf(loc));
-	}
 
-	public Surrogate surrogateForLoc(Integer loc){
-		return surrogateForSite.get(loc);
-	}
-	
-	public Object getLinearization(int rec,int location) {
-		return null; //TODO
-	}
-	
-	public void doLineGen() {}
-	
-	
-    public void initSurrogates() {}	
-	
-	
-	
-	
-	
 }

@@ -3,6 +3,11 @@ package calsim.surrogate;
 import java.util.ArrayList;
 
 public class LinearConstraint {
+	
+	
+	public static final int VAL_NDX=0;
+	public static final int DSAC_NDX=1;
+	public static final int DEXP_NDX=2;
 
 	public LinearConstraint(SurrogateMonth annMonth) {
 		this.annMonth = annMonth;
@@ -10,23 +15,10 @@ public class LinearConstraint {
 
 	SurrogateMonth annMonth;
 
-	/**
-	 * Generate a linear constraint for QSac and Qexp that serves to enforce water quality objectives
-	 * @param monthly Inputs Monthly flow histories from CalSIM. Values for the present month represent the linearization point
-	 * @param year Year in which constraint is being generated	
-	 * @param month Month in which constraint is being generated
-	 * @param cycle CalSIM cycle for which constraint is being generated, needed for cacheing.
-	 * @param constraintComponent constraints have several parameters. This describes which is being queries
-	 * @param aveType Basis of summarizing water quality compliance.
-	 * @return void
-	 */
-	public double[][] linearize( ArrayList<double[][]> monthlyInputs,  
-			int year, int month, int cycle, 
-			int constraintComponent, int location, int aveType, double targetWQ) {
+	
+	
+	
 
-		double[][] valGradient = gradient(monthlyInputs,year,month);
-		return valGradient;		
-	}
 
 	/**
 	 * 
@@ -91,4 +83,40 @@ public class LinearConstraint {
 		return ddQAll;
 	}	
 
+	
+	/**
+	 * Generate a linear constraint for QSac and Qexp that serves to enforce a single water quality objective.
+	 * 
+	 * Note that unlike a lot of the other methods in this library that will treat all of the locations covered by a multivariate
+	 * surrogate at once, this is just a utility for a single location and water quality target. The reason for that is that
+	 * the targets vary and are not given for all the locations at once in a single call from WRESL. So what ends up happening is
+	 * that the client code calls gradient() and caches that result. Then when individual calls come in for a constraint
+	 * at various stations it will use this method as a utility.
+	 * @param monthly Inputs Monthly flow histories from CalSIM. Values for the present month represent the linearization point
+	 * @param year Year in which constraint is being generated	
+	 * @param month Month in which constraint is being generated
+	 * @param cycle CalSIM cycle for which constraint is being generated, needed for cacheing.
+	 * @param constraintComponent constraints have several parameters. This describes which is being queries
+	 * @param aveType Basis of summarizing water quality compliance.
+	 * @return void
+	 */
+	public double[] formulateConstraint( double[] valGradient, double targetWQ, double sac0, double exp0) {
+		
+		// reorganize this:
+		// S0 + dS/dSac * (Sac - Sac0) + dS/dExp * (Exp - Exp0) < target
+		// Where the incoming values of monthlyInputs.get(0)[][0] (first time slot) is Sac0
+		// and the incoming monthlyInputs.get(1)[][0] (most recent time slot) is Exp0
+		// and S0 is the corresponding salinity for those nominal values
+		// Reorganizing the above equation gives the actual constraints on Sac and Exp
+		// In terms of known quantities:
+		// dS/dSac* Sac + dS/dExp*Exp < (target - S0 + dS/dSac*Sac0 + dS/dExp*Exp0) 
+		// The variable rhs represents the total on the right
+		//for (int iLoc = 0)
+		double rhs = targetWQ - valGradient[LinearConstraint.VAL_NDX] + valGradient[LinearConstraint.DSAC_NDX]*sac0 + valGradient[LinearConstraint.DEXP_NDX]*exp0;
+		double sacCoef = valGradient[LinearConstraint.DSAC_NDX];
+	    double expCoef = valGradient[LinearConstraint.DEXP_NDX];
+		double[] constraintCoefs = {rhs,sacCoef,expCoef};
+		return constraintCoefs;	
+	}	
+	
 }
