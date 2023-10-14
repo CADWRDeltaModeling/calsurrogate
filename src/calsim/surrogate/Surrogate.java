@@ -2,6 +2,11 @@ package calsim.surrogate;
 
 import java.util.ArrayList;
 
+/**
+ * Generic representation of a surrogate that estimates salinity at one or more locations given 
+ * a set of inflows and gate operations. The traditional implementation is an ANN or gmodel.
+ * A surrogate may be univariate (estimates one location) or multivariate (estimates several).
+ */
 public interface Surrogate extends DailyToSurrogate {
 
 	/**

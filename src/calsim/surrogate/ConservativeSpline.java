@@ -11,6 +11,10 @@ package calsim.surrogate;
  */
 import java.io.*;
 
+/** Rational histospline that smoothly distributes monthly totals into daily. 
+ * The spline is conservative with respect to monthly totals and monthly time boundaries 
+ * and Given sufficiently high values of the parameters p and q, it is monotonicity preserving. 
+ */
 public class ConservativeSpline {
 
 

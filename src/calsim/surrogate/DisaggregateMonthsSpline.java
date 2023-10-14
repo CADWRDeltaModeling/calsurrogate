@@ -1,5 +1,9 @@
 package calsim.surrogate;
 
+/**
+ * Monthly to daily disaggregation using a conservative spline (rationional histospline)
+ * //TODO the spline paramter pq is kind of buroed.
+ */
 public class DisaggregateMonthsSpline extends DisaggregateMonths {
 
 	public DisaggregateMonthsSpline(int nMon) {

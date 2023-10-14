@@ -8,9 +8,9 @@ import org.tensorflow.Tensor;
 import org.tensorflow.TensorFlow;
 import org.tensorflow.Session.Runner;
 
-/*
- * Wraps a TensorFlow saved model call. Leaves resources open between calls. Some 
- * assumptions on features and dimensionality.
+/**
+ * Generic wrapper for a TensorFlow saved model. 
+ *  Some assumptions on features and dimensionality.
  */
 public class TensorWrapper implements Surrogate {
 

@@ -8,6 +8,7 @@ import calsim.surrogate.DisaggregateMonths;
 import calsim.surrogate.DisaggregateMonthsDaysToOps;
 import calsim.surrogate.DisaggregateMonthsRepeat;
 import calsim.surrogate.DisaggregateMonthsSpline;
+import calsim.surrogate.LinearConstraint;
 import calsim.surrogate.MockSurrogate;
 import calsim.surrogate.Surrogate;
 import calsim.surrogate.SurrogateMonth;
@@ -163,17 +164,20 @@ public static void main(String[] args) {
 			sjr,sjr_fut,dcc,dcc_fut,dcd,dcd_fut,
 			sac_other_prev, sac_other, exp_other_prev,exp_other,smscg,smscg_fut, 
 			ecTarget, location, variable, ave_type, currMonth, currYear);
-	variable = 0;
+	
+	variable = LinearConstraint.VAL_NDX;
 	float lineout0 = calsimIF.annec_arr(sac, sac_est, exp, exp_est, 
 			sjr,sjr_fut,dcc,dcc_fut,dcd,dcd_fut,
 			sac_other_prev, sac_other, exp_other_prev,exp_other,smscg,smscg_fut, 
 			ecTarget, location, variable, ave_type, currMonth, currYear);
-	variable = 1;
+	
+	variable = LinearConstraint.DSAC_NDX;
 	float lineout1 = calsimIF.annec_arr(sac, sac_est, exp, exp_est, 
 			sjr,sjr_fut,dcc,dcc_fut,dcd,dcd_fut,
 			sac_other_prev, sac_other, exp_other_prev,exp_other,smscg,smscg_fut, 
 			ecTarget, location, variable, ave_type, currMonth, currYear);
-	variable = 2;
+	
+	variable = LinearConstraint.DEXP_NDX;
 	float lineout2 = calsimIF.annec_arr(sac, sac_est, exp, exp_est, 
 			sjr,sjr_fut,dcc,dcc_fut,dcd,dcd_fut,
 			sac_other_prev, sac_other, exp_other_prev,exp_other,smscg,smscg_fut, 

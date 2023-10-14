@@ -5,8 +5,8 @@ import java.io.*;
 import java.util.Random;
 
 /**
- * Abstract class for the step of taking present and past monthly averages
- * and obtaining a daily history. An example implementation is 
+ * Abstract class for the step converting monthly averages
+ * to a daily history. An example implementation is 
  * based on ConservativeSpline, a rational histospline from Splath
  * that is also implemented in vtools for python. 
  * 
