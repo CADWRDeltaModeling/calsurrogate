@@ -4,14 +4,14 @@ package calsim.surrogate;
  * This repackages the daily flow history in the aggregation common for CalSIM ANNs,
  * which is 8 single days and 10 11-day averages looking back in time.
  */
-public class BlockDailyToSurrogate implements DailyToSurrogate{
+public class DailyToSurrogateBlocked implements DailyToSurrogate{
 
 
 	private int nDaily;
 	private int nBlock;
 	private int blockLen;
 
-	public BlockDailyToSurrogate(int nDaily, int nBlock, int blockLen) {
+	public DailyToSurrogateBlocked(int nDaily, int nBlock, int blockLen) {
 		this.nDaily = nDaily;
 		this.nBlock = nBlock;
 		this.blockLen = blockLen;

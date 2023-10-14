@@ -17,7 +17,7 @@ public class EmmatonExampleTensorFlowANN {
 
 		String[] tensorNamesInt = new String[0];
 		String outName = "StatefulPartitionedCall:0";
-        DailyToSurrogate dayToANN = new BlockDailyToSurrogate(8,10,11);
+        DailyToSurrogate dayToANN = new DailyToSurrogateBlocked(8,10,11);
 		Surrogate wrap = new TensorWrapper(fname,tensorNames,tensorNamesInt,outName,dayToANN);	
 		return wrap;
 	}

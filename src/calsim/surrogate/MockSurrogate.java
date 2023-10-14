@@ -11,7 +11,7 @@ public class MockSurrogate implements Surrogate {
     double EXPMIN = 500;
    
     public MockSurrogate(int lenHist) {
-    	dayToSurrogate = new DefaultDailyToSurrogate(lenHist,true);
+    	dayToSurrogate = new DailyToSurrogateDefault(lenHist,true);
     }
     
 	

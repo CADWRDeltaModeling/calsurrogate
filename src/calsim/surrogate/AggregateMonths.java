@@ -1,7 +1,15 @@
 package calsim.surrogate;
 
+/**
+ * Classes that combine daily surrogate output into monthly summary statistics like means used by CalSIM constraints.
+ * The choices are an enum, each choice in which is a class. So instead of instantiating these with a constructor
+ * you use the enum:
+ * AggregateMonths agg = AggregateMonths.MONTHLY_MEAN; 
+ */
 public enum AggregateMonths {
-
+        /**
+         * Aggregates to monthly mean.
+         */
 		MONTHLY_MEAN {
 			@Override
 			/**

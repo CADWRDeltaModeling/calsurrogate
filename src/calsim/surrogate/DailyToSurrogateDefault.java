@@ -1,11 +1,11 @@
 package calsim.surrogate;
 
-public class DefaultDailyToSurrogate implements DailyToSurrogate {
+public class DailyToSurrogateDefault implements DailyToSurrogate {
 
 	private int lenHistory;
 	private boolean reverse;
 
-	public DefaultDailyToSurrogate(int nHistory, boolean rev) {
+	public DailyToSurrogateDefault(int nHistory, boolean rev) {
 		this.lenHistory = nHistory;
 		this.reverse = rev;
 	}
