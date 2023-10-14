@@ -4,10 +4,9 @@ import java.util.ArrayList;
 
 /**
  * Apply daily surrogate by disaggregating input, running the surrogate and summarizing to a monthly statistic.
- * The full workflow is shown in 
- * <img src="./doc-files/ANNMonth.png" alt='ANN Month design' width=600 />
+ * The full workflow is shown in  * <img src="./doc-files/ANNMonth.png" alt='ANN Month design' width=600 />.
  */
-public class SurrogateMonth
+public class SurrogateMonth 
  {
 
 
@@ -54,7 +53,8 @@ public class SurrogateMonth
 		// append exogenous tide to last slot in the array in the array
 		double[][] tide = new double[nbatch][];
 		int nDay = 900; //TODO This is a placeholder, not correct
-		tide[0] = SFTide.getInstance().arrayFrom(year, month, 1, nDay); 
+		int colIndex = 0;  //TODO colIndex not implemented
+		tide[0] = ExogenousTimeSeries.getInstance().dailyDataSlice(0,year, month, 1, nDay); 
         for (int jbatch=1; jbatch<nbatch; jbatch++) {
         	tide[jbatch] = new double[tide[0].length];
 		    System.arraycopy(tide[0], 0, tide[jbatch], 0, tide[0].length);

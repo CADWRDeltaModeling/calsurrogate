@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
+/**
+ * Class used to produce a hash key for surrogate evaluations. It tracks the year and month and cycle
+ * as well as a couple pieces of input data such as the most recent Sac and Export flow. 
+ */
 public class RunRecord {
 
 	int year;

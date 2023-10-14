@@ -7,35 +7,39 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 
 /**
- * Tide encapsulating external data. This isn't used yet, but it may be important for sea level rise
+ * Manages external daily time series data like tide properties stored in a csv file
+ * An important caller of this class is ANNMonth after 
+ * expanding CalSIM monthly data to daily. 
+ * @see calsim.surrogate.ANNMonth
  */
-public class SFTide{
-    private static SFTide _instance=null;
+public class ExogenousTimeSeries{
+    private static ExogenousTimeSeries _instance=null;
 	private final String delimiter = ",";
     private boolean loaded;
     private LocalDate startDate = null;
     private double[] data;
 
-    private SFTide() {
-    	this.startDate = LocalDate.of(1910,1,1);
-    	ensureLoaded();
+    private ExogenousTimeSeries() {
+    	this.startDate = LocalDate.of(1910,1,1);  //TODO hardwires
+    	String csvFile = "calsim/surrogate/sftide.csv";
+    	ensureLoaded(csvFile);
     }
 
-    public static synchronized SFTide getInstance(){
+    public static synchronized ExogenousTimeSeries getInstance(){
         if (_instance == null) {
-            _instance = new SFTide();
+            _instance = new ExogenousTimeSeries();
         }
         return _instance;
     }
 
 	
-	private void ensureLoaded() {
+	private void ensureLoaded(String csvFile) {
 		if (! loaded) {
-			loadData();
+			loadData(csvFile);
 		}
 	}
 	
-	public double[] arrayFrom(int year, int month, int day, int nday) {
+	public double[] dailyDataSlice(int colIndex,int year, int month, int day, int nday) {
 		LocalDate request = LocalDate.of(year,month,day);
 	    
 		long offset = ChronoUnit.DAYS.between(startDate, request);
@@ -47,9 +51,8 @@ public class SFTide{
 	}
 	
 	
-	public void loadData() {
+	private void loadData(String csv) {
 		System.out.println("Start");
-		String csv = "calsim/surrogate/sftide.csv";
 		String firstDate = null;
 		ArrayList<Double> inData = new ArrayList<Double>();
 		
@@ -86,8 +89,8 @@ public class SFTide{
 	}
 	
 	public static void main(String[] argv){
-		SFTide tide = SFTide.getInstance();
-		double[] tideSlice = tide.arrayFrom(1924, 1, 5, 4);
+		ExogenousTimeSeries tide = ExogenousTimeSeries.getInstance();
+		double[] tideSlice = tide.dailyDataSlice(0,1924, 1, 5, 4);
 		for (int i = 0 ; i < tideSlice.length; i++) {
 			System.out.println(tideSlice[i]);
 		}
