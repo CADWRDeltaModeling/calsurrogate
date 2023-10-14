@@ -8,10 +8,9 @@ import org.junit.jupiter.api.Test;
 
 class ConservativeSplineTest {
 
-
 	@Test
 	void test() {
-		assertTrue(1==1);
+		assertTrue(1 == 1);
 	}
 
 }

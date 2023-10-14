@@ -1,8 +1,9 @@
 package calsim.surrogate;
 
 /**
- * Implementation of DailyToSurrogate that either returns daily data as-is or reversed in tiem, no groupings.
- * Although this is called "default", it is not the traditional CalSIM ANN grouping
+ * Implementation of DailyToSurrogate that either returns daily data as-is or
+ * reversed in tiem, no groupings. Although this is called "default", it is not
+ * the traditional CalSIM ANN grouping
  */
 public class DailyToSurrogateDefault implements DailyToSurrogate {
 
@@ -43,6 +44,6 @@ public class DailyToSurrogateDefault implements DailyToSurrogate {
 
 	public void setReverse(boolean reverse) {
 		this.reverse = reverse;
-	}	
-	
+	}
+
 }
