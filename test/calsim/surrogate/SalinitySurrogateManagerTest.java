@@ -11,7 +11,7 @@ class SalinitySurrogateManagerTest {
 
 	@Test
 	void testSalinityManager() {
-		SalinitySurrogateManager singleton = SalinitySurrogateManager.INSTANCE; 
+		SalinitySurrogateManager singleton = SalinitySurrogateManager.INSTANCE;
 	}
 
 }

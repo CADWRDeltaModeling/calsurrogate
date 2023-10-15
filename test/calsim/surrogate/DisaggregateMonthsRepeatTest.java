@@ -23,6 +23,7 @@ class DisaggregateMonthsRepeatTest {
 		assertEquals(result[31], 2.);
 		assertEquals(result[61], 2.);
 		assertEquals(result[62], 0.);
+		assertEquals(result.length,toOps.getNDay(2009,11));
 
 	}
 

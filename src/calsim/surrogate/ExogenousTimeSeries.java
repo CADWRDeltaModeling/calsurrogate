@@ -3,8 +3,12 @@ package calsim.surrogate;
 import java.io.*;
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+
+
+
 
 /**
  * Manages external daily time series data like tide properties stored in a csv
@@ -18,7 +22,7 @@ public class ExogenousTimeSeries {
 	private final String delimiter = ",";
 	private boolean loaded;
 	private LocalDate startDate = null;
-	private double[] data;
+	private double[][] data;  // First index is variable, second (fast) index is time
 
 	private ExogenousTimeSeries() {
 		this.startDate = LocalDate.of(1910, 1, 1); // TODO hardwires
@@ -46,54 +50,99 @@ public class ExogenousTimeSeries {
 
 		double[] slice = new double[nday];
 
-		System.arraycopy(data, (int) offset, slice, 0, nday);
+		System.arraycopy(this.data[colIndex], (int) offset, slice, 0, nday);
 		return slice;
 	}
 
+	private CSVFileInfo fileInfo(InputStream stream) {
+		BufferedReader br = new BufferedReader(new InputStreamReader(stream));
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+		String line = "";
+		String[] tempArr;
+		CSVFileInfo info = new CSVFileInfo();
+		int nrow = 0;
+		try {
+			while ((line = br.readLine()) != null) {
+				if (line.startsWith("#")) {
+					continue;
+				}
+				if (line.toLowerCase().startsWith("date") || line.startsWith(",")) {
+					// Simple Header
+					continue;
+				}
+				tempArr = line.split(delimiter);
+				if (tempArr.length==0) continue; // empty line
+				if (info.startDate == null) {
+					info.startDate = LocalDate.parse(tempArr[0],formatter); // TODO better error control
+				}
+				if (tempArr.length > 1) {
+					int nDataCol = tempArr.length - 1;
+					if (info.nCol < 0) {
+						info.nCol = nDataCol;
+					}else {
+						if (nDataCol != info.nCol)
+							throw new IOException("Rows in exogenous time series file have differing number of colums: "+line);
+					}
+				}
+				nrow ++;
+				
+			}
+			//br.close();
+		}catch (IOException ioe) {
+			ioe.printStackTrace();
+		}
+
+
+		info.nLine = nrow;
+		return info;
+	}
+
+	
 	private void loadData(String csv) {
-		System.out.println("Start");
-		String firstDate = null;
-		ArrayList<Double> inData = new ArrayList<Double>();
 
 		try {
 			// This needed so that the packaging will work and the csv resource
 			// be available
 			ClassLoader loader = this.getClass().getClassLoader();
 			InputStream stream = loader.getResourceAsStream(csv);
-			System.out.println(stream);
+			CSVFileInfo info = this.fileInfo(stream);
+			
+			this.startDate = info.startDate;
+			data = new double[info.nCol][info.nLine];
+		    
+			// reposition at beginning of file
+			// TODO better way?
+			stream = loader.getResourceAsStream(csv);
 			BufferedReader br = new BufferedReader(new InputStreamReader(stream));
-
+            
+			
 			String line = "";
 			String[] tempArr;
+			int iRow = 0;
 			while ((line = br.readLine()) != null) {
 				if (line.startsWith("#")) {
 					continue;
 				}
 				tempArr = line.split(delimiter);
-				Double val = Double.valueOf(tempArr[1]);
-				inData.add(val);
-
-				// for(String tempStr : tempArr) {
-				// System.out.print(tempStr + " ");
-				// }
-				// System.out.println();
+				if (tempArr.length == 0) continue;
+				//System.out.println(line);
+                for (int jCol = 0; jCol < info.nCol; jCol++) {
+                	this.data[jCol][iRow] = Double.valueOf(tempArr[1+jCol]);
+                }
+                iRow++;
 			}
 			br.close();
-			data = inData.stream().mapToDouble(Double::doubleValue).toArray();
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
-		System.out.println("out");
-
 	}
 
-	public static void main(String[] argv) {
-		ExogenousTimeSeries tide = ExogenousTimeSeries.getInstance();
-		double[] tideSlice = tide.dailyDataSlice(0, 1924, 1, 5, 4);
-		for (int i = 0; i < tideSlice.length; i++) {
-			System.out.println(tideSlice[i]);
-		}
+}
 
-	}
 
+/** Struct-like class used during parsing */
+class CSVFileInfo{
+	public LocalDate startDate=null;
+	public int nLine = -1;
+	public int nCol = -1;
 }

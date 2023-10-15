@@ -2,6 +2,7 @@ package calsim.surrogate;
 
 import java.time.YearMonth;
 import java.io.*;
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -72,10 +73,22 @@ public abstract class DisaggregateMonths {
 
 		return out;
 	}
+	
+	/**
+	 * Calculate the length of daily buffer time series that will result from the disaggregation
+	 * The buffer will span the number of months returned by getNMonth() including the current month
+	 * @param year Current year
+	 * @param month Current month
+	 * @return total length of buffer
+	 */
+	public int getNDay(int year, int month) {
+		int[] array = daysMonth(year, month);
+		return Arrays.stream(array).sum();
+	}
 
 	/**
-	 * Returns a time series indexed in units of days where each time entry is the
-	 * start (Jan 1 0:00) of the month. An entry is appended representing the start
+	 * Returns a time series indexed in units of days where each time index is the
+	 * start (Jan 1 0:00) of a month. An entry is appended representing the start
 	 * of the next (month+1) month. The data
 	 * 
 	 * @param year

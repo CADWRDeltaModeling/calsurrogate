@@ -12,14 +12,55 @@ public class SurrogateMonth {
 	private DisaggregateMonths[] disagg;
 	private AggregateMonths agg;
 	private Surrogate daily;
+    private int[] exogInputsNdx = {5};  // TODO: hardwired logic
+    private DisaggregateMonths firstNonNullDisagg; // non-null used for length calculations
+    
+	public SurrogateMonth(DisaggregateMonths[] disagg, 
+			              Surrogate daily, 
+			              AggregateMonths agg) {
 
-	public SurrogateMonth(DisaggregateMonths[] disagg, Surrogate daily, AggregateMonths agg) {
-		// TODO test number of inputs equals length of disaggregator
+		boolean allNull = true;
+		
+		for (DisaggregateMonths d : disagg) {
+			if (d != null) {
+				allNull = false;
+				firstNonNullDisagg = d;
+			}
+		}
+		if (allNull) {
+			throw new NullPointerException(
+			"Not all disaggregators can be null. If using all exogenous data, use a dummy disaaggregator for one member");
+		}
+
 		this.disagg = disagg;
 		this.daily = daily;
 		this.agg = agg;
+		
 	}
 
+	public int bufferNDay(int year, int month) {
+		return firstNonNullDisagg.getNDay(year, month);
+	}
+
+	/**
+	 * 
+	 * @param ivar Index in surrogate of the input
+	 * @param arr array to be filled. On entry first dimension will be nBatch 
+	 *        and second is ignored. On exit dim should be nBatch x nDay
+	 */
+	public void loadExogenous(double[][] arr, int ivar, int year, int month, int nDay) {
+
+	    int ndx = this.getExogInputIndex(ivar);	
+	    int nBatch = arr.length; // array will end up being nBatch x nDay
+        arr[0] = ExogenousTimeSeries.getInstance().dailyDataSlice(ndx, year, month, 1, nDay);
+		
+		// Then copy to the other members of the batch
+		for (int jbatch = 1; jbatch < nBatch; jbatch++) {
+			arr[jbatch] = new double[bufferNDay(year,month)];
+			System.arraycopy(arr[0], 0, arr[jbatch], 0, arr[0].length);
+		}
+	}
+	
 	/**
 	 * Complete application of the ANN or other surrogate. Disaggregates monthly
 	 * inputs to daily, marches through days repackaging the inputs into the time
@@ -45,21 +86,17 @@ public class SurrogateMonth {
 		// but will be put forward in time
 		for (int ivar = 0; ivar < nvar; ivar++) {
 			double[][] newInput = new double[nbatch][];
-			for (int jbatch = 0; jbatch < nbatch; jbatch++) {
-				newInput[jbatch] = disagg[ivar].apply(year, month, monthlyInputs.get(ivar)[jbatch]);
+			if (isExogenous(ivar)){
+				int nday = 118; //TODO hardwire. How do we know this if all exogenous?
+				loadExogenous(newInput,ivar,year,month,nday);
+			}else {
+				for (int jbatch = 0; jbatch < nbatch; jbatch++) {
+					newInput[jbatch] = disagg[ivar].apply(year, month, monthlyInputs.get(ivar)[jbatch]);
+				}
+				dailyInputs.add(newInput);
 			}
-			dailyInputs.add(newInput);
 		}
 
-		// append exogenous tide to last slot in the array in the array
-		double[][] tide = new double[nbatch][];
-		int nDay = 900; // TODO This is a placeholder, not correct
-		int colIndex = 0; // TODO colIndex not implemented
-		tide[0] = ExogenousTimeSeries.getInstance().dailyDataSlice(0, year, month, 1, nDay);
-		for (int jbatch = 1; jbatch < nbatch; jbatch++) {
-			tide[jbatch] = new double[tide[0].length];
-			System.arraycopy(tide[0], 0, tide[jbatch], 0, tide[0].length);
-		}
 		int indexStart = disagg[0].offsetFirstMonth(year, month);
 
 		// Slide window on the daily inputs and generate daily output
@@ -146,4 +183,22 @@ public class SurrogateMonth {
 		this.daily = daily;
 	}
 
+	public boolean isExogenous(int ivar) {
+		return getExogInputIndex(ivar) > 0;
+	}
+	
+	/**
+	 * Returns the index within the exogenous input time series that pertains to variable 
+	 * @param ivar
+	 * @return column index within exogenous time series
+	 */
+	public int getExogInputIndex(int ivar) {
+		for (int i = 0; i < exogInputsNdx.length; i++) {
+			if (this.exogInputsNdx[i] == ivar) {
+				return ivar;
+			}
+		}
+		return -1;
+	}	
+	
 }
