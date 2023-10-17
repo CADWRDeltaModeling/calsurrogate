@@ -16,7 +16,7 @@ class ExogenousTimeSeriesTest
 	@Test
 	void testExogenousTimeSeries() {
 			ExogenousTimeSeries ext = ExogenousTimeSeries.getInstance();
-			double[] slice = ext.dailyDataSlice(0, 2018, 9, 1, 4);
+			double[] slice = ext.dailyDataSlice(0, 2015, 9, 1, 4);
 			for (int i = 0; i < slice.length; i++) {
 				System.out.println(slice[i]);
 			}

@@ -53,6 +53,20 @@ public class ExogenousTimeSeries {
 		System.arraycopy(this.data[colIndex], (int) offset, slice, 0, nday);
 		return slice;
 	}
+	
+	boolean skipLine(String line) {
+		if (line.startsWith("#") || (line.indexOf("#")==1)) {
+			// Should be startsWith but that failed
+			return true;
+		}
+		
+		if (line.toLowerCase().startsWith("date") || (line.toLowerCase().indexOf("date") ==1 ) || 
+			(line.indexOf(",")==1) || line.startsWith(",") )  {
+			// Simple Header
+			return true;
+		}
+		return false;
+	}
 
 	private CSVFileInfo fileInfo(InputStream stream) {
 		BufferedReader br = new BufferedReader(new InputStreamReader(stream));
@@ -63,13 +77,9 @@ public class ExogenousTimeSeries {
 		int nrow = 0;
 		try {
 			while ((line = br.readLine()) != null) {
-				if (line.startsWith("#")) {
-					continue;
-				}
-				if (line.toLowerCase().startsWith("date") || line.startsWith(",")) {
-					// Simple Header
-					continue;
-				}
+				line = line.trim();
+				if (skipLine(line)) continue;
+
 				tempArr = line.split(delimiter);
 				if (tempArr.length==0) continue; // empty line
 				if (info.startDate == null) {
@@ -120,7 +130,7 @@ public class ExogenousTimeSeries {
 			String[] tempArr;
 			int iRow = 0;
 			while ((line = br.readLine()) != null) {
-				if (line.startsWith("#")) {
+				if (skipLine(line)) {
 					continue;
 				}
 				tempArr = line.split(delimiter);
