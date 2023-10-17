@@ -66,7 +66,7 @@ public class ConservativeSpline {
 		// Check values of parameters and fitted values for range
 
 		if (y0 < ymin | yn < ymin) {
-			throw new IllegalArgumentException("y0 or yn must be >= ymin");
+			throw new IllegalArgumentException("y0 or yn must be >= ymin; y0="+y0+" yn="+yn + " ymin="+ymin);
 		}
 		int i = 0;
 		while (i < n) {

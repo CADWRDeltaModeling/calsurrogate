@@ -67,6 +67,7 @@ public class TensorWrapper implements Surrogate {
 		runner = this.s.runner();
 		int nBatch = 0;
 		if (nFeatures > 0) {
+			System.out.println("N Feature"+nFeatures);
 			nBatch = rawData.get(0).length;
 			for (int i = 0; i < nFeatures; i++) {
 				int featureLen = rawData.get(i)[0].length;

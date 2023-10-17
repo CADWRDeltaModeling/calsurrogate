@@ -90,14 +90,13 @@ public class CalSIMExampleEmmatonInterface {
 	 * @param currYear
 	 * @return
 	 */
-	public float annlinegen_arr(float[] Qsac_prv, float Qsac_est, float[] Qexp_prv, float Qexp_est, float[] Qsjr_prv,
+	public float linegen_arr(float[] Qsac_prv, float Qsac_est, float[] Qexp_prv, float Qexp_est, float[] Qsjr_prv,
 			float Qsjr_fut, float[] DXC_prv, float DXC_fut, float[] DICU_prv, float DICU_fut, float[] Qsac_oth_prv,
 			float Qsac_oth_fut, float[] Qexp_oth_prv, float Qexp_oth_fut, float[] SMSCG_prv, float SMSCG_fut,
 			float ECTARGET, int location, int variable, int ave_type, int currMonth, int currYear) {
 
 		int NHIST = 5;
 		int NLOC = 7; // TODO move to config?
-		ArrayList<double[][]> monthlyInput = new ArrayList<double[][]>();
 		double[][] sac = new double[1][NHIST];
 		double[][] exp = new double[1][NHIST];
 		double[][] dcc = new double[1][NHIST];
@@ -117,16 +116,22 @@ public class CalSIMExampleEmmatonInterface {
 		smscg[BATCHZERO][0] = (double) SMSCG_fut;
 
 		for (int ihist = 1; ihist < NHIST; ihist++) {
-			sac[BATCHZERO][ihist] = (double) Qsac_prv[ihist]; // TODO correct direction?
-			exp[BATCHZERO][ihist] = (double) Qexp_prv[ihist];
-			dcc[BATCHZERO][ihist] = (double) DXC_prv[ihist];
-			dcd[BATCHZERO][ihist] = (double) DICU_prv[ihist];
-			sjr[BATCHZERO][ihist] = (double) Qsjr_prv[ihist];
+			sac[BATCHZERO][ihist] = (double) Qsac_prv[ihist-1]; // TODO correct direction?
+			exp[BATCHZERO][ihist] = (double) Qexp_prv[ihist-1];
+			dcc[BATCHZERO][ihist] = (double) DXC_prv[ihist-1];
+			dcd[BATCHZERO][ihist] = (double) DICU_prv[ihist-1];
+			sjr[BATCHZERO][ihist] = (double) Qsjr_prv[ihist-1];
 			tide[BATCHZERO][ihist] = 0.;
-			smscg[BATCHZERO][ihist] = (double) SMSCG_prv[ihist];
+			smscg[BATCHZERO][ihist] = (double) SMSCG_prv[ihist-1];
 		}
 
-		return 4.f;
+		ArrayList<double[][]> monthlyInput = new ArrayList<double[][]>(
+				Arrays.asList(sac, exp, dcc, dcd, sjr, tide, smscg));
+
+		ave_type = 0; // TODO hardwired to mean, which isn't right here
+		float out = (float) manager.lineGenImpl(monthlyInput, location, variable, ave_type, currMonth, currYear);	
+		
+		return out;
 	}
 
 	public static void main(String[] args) {
@@ -166,21 +171,27 @@ public class CalSIMExampleEmmatonInterface {
 				ave_type, currMonth, currYear);
 		System.out.println("Out: " + out );
 
-		/*
+		
+		
+		
+		
 		variable = LinearConstraint.VAL_NDX;
-		float lineout0 = calsimIF.annec_arr(sac, sac_est, exp, exp_est, sjr, sjr_fut, dcc, dcc_fut, dcd, dcd_fut,
+		float lineout0 = calsimIF.linegen_arr(sac, sac_est, exp, exp_est, sjr, sjr_fut, dcc, dcc_fut, dcd, dcd_fut,
 				sac_other_prev, sac_other, exp_other_prev, exp_other, smscg, smscg_fut, ecTarget, location, variable,
 				ave_type, currMonth, currYear);
+		System.out.println(lineout0);
 
 		variable = LinearConstraint.DSAC_NDX;
-		float lineout1 = calsimIF.annec_arr(sac, sac_est, exp, exp_est, sjr, sjr_fut, dcc, dcc_fut, dcd, dcd_fut,
+		float lineout1 = calsimIF.linegen_arr(sac, sac_est, exp, exp_est, sjr, sjr_fut, dcc, dcc_fut, dcd, dcd_fut,
 				sac_other_prev, sac_other, exp_other_prev, exp_other, smscg, smscg_fut, ecTarget, location, variable,
 				ave_type, currMonth, currYear);
-
+		System.out.println(lineout1);
+		
 		variable = LinearConstraint.DEXP_NDX;
-		float lineout2 = calsimIF.annec_arr(sac, sac_est, exp, exp_est, sjr, sjr_fut, dcc, dcc_fut, dcd, dcd_fut,
+		float lineout2 = calsimIF.linegen_arr(sac, sac_est, exp, exp_est, sjr, sjr_fut, dcc, dcc_fut, dcd, dcd_fut,
 				sac_other_prev, sac_other, exp_other_prev, exp_other, smscg, smscg_fut, ecTarget, location, variable,
-				ave_type, currMonth, currYear); */
+				ave_type, currMonth, currYear); 
+		System.out.println(lineout2);
 
 	}
 

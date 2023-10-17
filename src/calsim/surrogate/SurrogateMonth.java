@@ -80,6 +80,7 @@ public class SurrogateMonth {
 		ArrayList<double[][]> dailyInputs = new ArrayList<double[][]>();
 		int nvar = monthlyInputs.size();
 		int nbatch = monthlyInputs.get(0).length;
+		int nday = monthlyInputs.get(0)[0].length; //TODO this will break if first is exog 
 
 		// Disaggregate monthly to daily for each feature/input. monthly comes in
 		// reversed
@@ -87,14 +88,17 @@ public class SurrogateMonth {
 		for (int ivar = 0; ivar < nvar; ivar++) {
 			double[][] newInput = new double[nbatch][];
 			if (isExogenous(ivar)){
-				int nday = 118; //TODO hardwire. How do we know this if all exogenous?
 				loadExogenous(newInput,ivar,year,month,nday);
 			}else {
 				for (int jbatch = 0; jbatch < nbatch; jbatch++) {
 					newInput[jbatch] = disagg[ivar].apply(year, month, monthlyInputs.get(ivar)[jbatch]);
 				}
-				dailyInputs.add(newInput);
 			}
+			System.out.println("ddd "+isExogenous(ivar));
+			for (int jbatch = 0; jbatch < nbatch; jbatch++) {
+			System.out.println("eee" + newInput[jbatch].length);
+			}
+			dailyInputs.add(newInput);			
 		}
 
 		int indexStart = disagg[0].offsetFirstMonth(year, month);
@@ -151,6 +155,7 @@ public class SurrogateMonth {
 			}
 			expandedDaily.add(bigInput);
 		}
+
 		// out is dimensioned nBigBatch x nOutput where nOutput is number of stations
 		// predicted
 		float[][] out = daily.estimate(expandedDaily, null);
@@ -184,7 +189,7 @@ public class SurrogateMonth {
 	}
 
 	public boolean isExogenous(int ivar) {
-		return getExogInputIndex(ivar) > 0;
+		return getExogInputIndex(ivar) >= 0;
 	}
 	
 	/**
@@ -194,7 +199,10 @@ public class SurrogateMonth {
 	 */
 	public int getExogInputIndex(int ivar) {
 		for (int i = 0; i < exogInputsNdx.length; i++) {
+			System.out.println("yo"+ ivar+" "+ i);
+			
 			if (this.exogInputsNdx[i] == ivar) {
+				System.out.println("yo"+ ivar+" "+ i);
 				return i;
 			}
 		}
