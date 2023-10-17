@@ -26,7 +26,7 @@ public class ExogenousTimeSeries {
 
 	private ExogenousTimeSeries() {
 		this.startDate = LocalDate.of(1910, 1, 1); // TODO hardwires
-		String csvFile = "calsim/surrogate/sftide.csv";
+		String csvFile = "calsim/surrogate/martinez_tidal_range.csv";
 		ensureLoaded(csvFile);
 	}
 

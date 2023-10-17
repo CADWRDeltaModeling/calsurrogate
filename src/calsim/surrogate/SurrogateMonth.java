@@ -195,7 +195,7 @@ public class SurrogateMonth {
 	public int getExogInputIndex(int ivar) {
 		for (int i = 0; i < exogInputsNdx.length; i++) {
 			if (this.exogInputsNdx[i] == ivar) {
-				return ivar;
+				return i;
 			}
 		}
 		return -1;
