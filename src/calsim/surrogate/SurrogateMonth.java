@@ -80,7 +80,7 @@ public class SurrogateMonth {
 		ArrayList<double[][]> dailyInputs = new ArrayList<double[][]>();
 		int nvar = monthlyInputs.size();
 		int nbatch = monthlyInputs.get(0).length;
-		int nday = monthlyInputs.get(0)[0].length; //TODO this will break if first is exog 
+		int nday = this.disagg[0].getNDay(year, month); 
 
 		// Disaggregate monthly to daily for each feature/input. monthly comes in
 		// reversed
@@ -93,10 +93,6 @@ public class SurrogateMonth {
 				for (int jbatch = 0; jbatch < nbatch; jbatch++) {
 					newInput[jbatch] = disagg[ivar].apply(year, month, monthlyInputs.get(ivar)[jbatch]);
 				}
-			}
-			System.out.println("ddd "+isExogenous(ivar));
-			for (int jbatch = 0; jbatch < nbatch; jbatch++) {
-			System.out.println("eee" + newInput[jbatch].length);
 			}
 			dailyInputs.add(newInput);			
 		}
@@ -172,7 +168,6 @@ public class SurrogateMonth {
 			for (int ibatch = 0; ibatch < nbatch; ibatch++) {
 				for (int jdate = 0; jdate < daysInMonth; jdate++) {
 					dailyOut[ibatch][jdate] = (double) out[ibatch * daysInMonth + jdate][iLoc]; // TODO make double?
-
 				}
 			}
 			dailyOutputs.add(dailyOut);
@@ -198,11 +193,8 @@ public class SurrogateMonth {
 	 * @return column index within exogenous time series
 	 */
 	public int getExogInputIndex(int ivar) {
-		for (int i = 0; i < exogInputsNdx.length; i++) {
-			System.out.println("yo"+ ivar+" "+ i);
-			
+		for (int i = 0; i < exogInputsNdx.length; i++) {			
 			if (this.exogInputsNdx[i] == ivar) {
-				System.out.println("yo"+ ivar+" "+ i);
 				return i;
 			}
 		}
