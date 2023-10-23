@@ -110,8 +110,8 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 
 		} else {
 			// Calculate and cache
-			double[][] gradient = linear.gradient(monthlyInput, year, month);
-			cachedGradient.put(rec, gradient); // Caches for next time
+			grad = linear.gradient(monthlyInput, year, month);
+			cachedGradient.put(rec, grad); // Caches for next time
 
 		}
 		double[] constraint = linear.formulateConstraint(grad[siteNDX], targetWQ, sac0, exp0);

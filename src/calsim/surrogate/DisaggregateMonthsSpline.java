@@ -21,8 +21,6 @@ public class DisaggregateMonthsSpline extends DisaggregateMonths {
 		double y0 = ts[1][0];
 		double yn = ts[1][this.getNMonth()];
 		double ymin = -0.00000001; // TODO fix the minimum reinforcement
-		System.out.println("Disagg");
-		for (double val : dataRev) System.out.println(val);
 		ConservativeSpline spline = new ConservativeSpline(ts[0], ts[1], pq, y0, yn, ymin);
 		double xNewMax = ts[0][this.getNMonth()];
 		int xNewLen = (int) xNewMax + 1;

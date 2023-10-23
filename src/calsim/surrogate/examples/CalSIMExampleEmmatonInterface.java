@@ -37,16 +37,16 @@ public class CalSIMExampleEmmatonInterface {
 		// Batching isn't very useful here, and thus hard to remember what this index
 		// is for. This is just a reminder it is for batching.
 		final int BATCHZERO = 0;
-		sac[BATCHZERO][0] = (double) Qsac_est;
-		exp[BATCHZERO][0] = (double) Qexp_est;
+		sac[BATCHZERO][0] = (double) (Qsac_est + Qsac_oth_fut);
+		exp[BATCHZERO][0] = (double) (Qexp_est + Qexp_oth_fut);
 		dcc[BATCHZERO][0] = (double) DXC_fut;
 		dcd[BATCHZERO][0] = (double) DICU_fut;
 		tide[BATCHZERO][0] = 6.; // TODO
 		smscg[BATCHZERO][0] = (double) SMSCG_fut;
 
 		for (int ihist = 1; ihist < NHIST; ihist++) {
-			sac[BATCHZERO][ihist] = (double) Qsac_prv[ihist-1]; // TODO correct direction?
-			exp[BATCHZERO][ihist] = (double) Qexp_prv[ihist-1];
+			sac[BATCHZERO][ihist] = (double) (Qsac_prv[ihist-1] + Qsac_oth_prv[ihist-1]); // Add "other" to "regular" Sac
+			exp[BATCHZERO][ihist] = (double) (Qexp_prv[ihist-1] + Qexp_oth_prv[ihist-1]); // TODO double check time direction?
 			dcc[BATCHZERO][ihist] = (double) DXC_prv[ihist-1];
 			dcd[BATCHZERO][ihist] = (double) DICU_prv[ihist-1];
 			sjr[BATCHZERO][ihist] = (double) Qsjr_prv[ihist-1];
@@ -108,16 +108,16 @@ public class CalSIMExampleEmmatonInterface {
 		// Batching isn't very useful here, and thus hard to remember what this index
 		// is for. This is just a reminder it is for batching.
 		final int BATCHZERO = 0;
-		sac[BATCHZERO][0] = (double) Qsac_est;
-		exp[BATCHZERO][0] = (double) Qexp_est;
+		sac[BATCHZERO][0] = (double) (Qsac_est+Qsac_oth_fut);
+		exp[BATCHZERO][0] = (double) (Qexp_est+Qexp_oth_fut);
 		dcc[BATCHZERO][0] = (double) DXC_fut;
 		dcd[BATCHZERO][0] = (double) DICU_fut;
 		tide[BATCHZERO][0] = -999.;
 		smscg[BATCHZERO][0] = (double) SMSCG_fut;
 
 		for (int ihist = 1; ihist < NHIST; ihist++) {
-			sac[BATCHZERO][ihist] = (double) Qsac_prv[ihist-1]; // TODO correct direction?
-			exp[BATCHZERO][ihist] = (double) Qexp_prv[ihist-1];
+			sac[BATCHZERO][ihist] = (double) (Qsac_prv[ihist-1] + Qsac_oth_prv[ihist-1]); // Add "other" to "regular" Sac
+			exp[BATCHZERO][ihist] = (double) (Qexp_prv[ihist-1] + Qexp_oth_prv[ihist-1]); // TODO double check time direction?
 			dcc[BATCHZERO][ihist] = (double) DXC_prv[ihist-1];
 			dcd[BATCHZERO][ihist] = (double) DICU_prv[ihist-1];
 			sjr[BATCHZERO][ihist] = (double) Qsjr_prv[ihist-1];
@@ -155,9 +155,9 @@ public class CalSIMExampleEmmatonInterface {
 		float[] smscg = { 0.000f, 0.000f, 1.000f, 1.000f };
 		float smscg_fut = 0.0f;
 
-		float[] sac_other_prev = { 0.f };
+		float[] sac_other_prev = { 0.f,0.f,0.f,0.f,0.f };
 		float sac_other = 0.f; // TODO account for this and check the order
-		float[] exp_other_prev = { 0.f };
+		float[] exp_other_prev = { 0.f,0.f,0.f,0.f,0.f };
 		float exp_other = 0.f;
 
 		float ecTarget = 2500.f;
