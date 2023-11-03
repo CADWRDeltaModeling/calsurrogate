@@ -70,9 +70,9 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	}
 
 	public void init() {
-		SurrogateMonth emmMonth = EmmatonExampleTensorFlowANN.emmatonSurrogateMonth();
-		setSurrogateForSite(EMM_CALSIM, MEAN, emmMonth);
-		calsimToSurrogateNdx.put(EMM_CALSIM, 0);
+		//SurrogateMonth emmMonth = EmmatonExampleTensorFlowANN.emmatonSurrogateMonth();
+		//setSurrogateForSite(EMM_CALSIM, MEAN, emmMonth);
+		//calsimToSurrogateNdx.put(EMM_CALSIM, 0);
 
 	}
 
