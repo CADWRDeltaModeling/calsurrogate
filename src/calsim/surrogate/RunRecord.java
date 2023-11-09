@@ -62,6 +62,7 @@ public class RunRecord {
 		this.intInput0 = int0;
 		this.intInput1 = int1;
 		this.year = year;
+		this.month = month;
 		this.cycle = cycle;
 		this.aveType = aveType;
 		this.surrogate = surrogate;

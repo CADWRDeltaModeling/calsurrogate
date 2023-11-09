@@ -65,7 +65,7 @@ public class ConservativeSpline {
 		//
 		// Check values of parameters and fitted values for range
 
-		if (y0 < ymin | yn < ymin) {
+		if (y0 < DEFAULT_LBOUND | yn < DEFAULT_LBOUND) {
 			throw new IllegalArgumentException("y0 or yn must be >= ymin; y0="+y0+" yn="+yn + " ymin="+ymin);
 		}
 		int i = 0;
@@ -73,7 +73,7 @@ public class ConservativeSpline {
 			// for (int i=0; i<n; i++){
 			if (p[i] <= EPS - 1 | q[i] <= EPS - 1)
 				throw new IllegalArgumentException("Parameters p,q must be > eps-1");
-			if (y[i] < ymin | y[i] > MAX_DATA_VALUE)
+			if (y[i] < DEFAULT_LBOUND | y[i] > MAX_DATA_VALUE)
 				throw new IllegalArgumentException("Data value out of reasonable bounds");
 			if (y[i] == ymin) {
 				n = i;
