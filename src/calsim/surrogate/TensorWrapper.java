@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
-import org.tensorflow.TensorFlow;
 import org.tensorflow.Session.Runner;
 
 /**
@@ -24,6 +23,10 @@ public class TensorWrapper implements Surrogate {
 	int nFeatures;
 	int nFeaturesInt;
 	DailyToSurrogate dayToANN;
+	Tensor<Long> inputInt;
+	Tensor<Float> input;
+	String fpath;
+	
 
 	/**
 	 * Create a TensorWrapper given the path to a directory containing
@@ -41,13 +44,13 @@ public class TensorWrapper implements Surrogate {
 			DailyToSurrogate dayToSurrogate) {
 		model = SavedModelBundle.load(fpath, "serve");
 		s = model.session();
-
 		this.tensorNames = tensorNames;
 		this.tensorNamesInt = tensorNamesInt;
 		nFeatures = tensorNames.length;
 		nFeaturesInt = tensorNamesInt.length;
 		this.outName = outName;
 		this.dayToANN = dayToSurrogate;
+		this.fpath = fpath;
 
 	}
 
@@ -63,7 +66,7 @@ public class TensorWrapper implements Surrogate {
 	 *         is Tensor dimension of the output (e.g. station)
 	 */
 	@Override
-	public float[][] estimate(ArrayList<double[][]> rawData, ArrayList<long[][]> rawDataInt) {
+	public float[][] estimate(ArrayList<double[][]> rawData, ArrayList<long[][]> rawDataInt) {		
 		runner = this.s.runner();
 		int nBatch = 0;
 		if (nFeatures > 0) {
@@ -76,7 +79,7 @@ public class TensorWrapper implements Surrogate {
 						featureData[k][j] = (float) rawData.get(i)[k][j];
 					}
 				}
-				Tensor<Float> input = Tensor.create(featureData, Float.class);
+				input = Tensor.create(featureData, Float.class);
 				runner.feed(tensorNames[i], input);
 			}
 
@@ -99,7 +102,7 @@ public class TensorWrapper implements Surrogate {
 						featureDataInt[k][j] = (long) rawDataInt.get(i)[k][j];
 					}
 				}
-				Tensor<Long> inputInt = Tensor.create(featureDataInt, Long.class);
+				inputInt = Tensor.create(featureDataInt, Long.class);
 				runner.feed(tensorNamesInt[i], inputInt);
 			}
 
@@ -109,6 +112,10 @@ public class TensorWrapper implements Surrogate {
 		float[][] out = new float[nBatch][1];
 
 		result.copyTo(out);
+		
+		if (result != null) result.close();
+		if (inputInt != null) inputInt.close();
+		if (input != null) input.close();
 		return out;
 	}
 
