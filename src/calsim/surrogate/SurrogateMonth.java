@@ -232,4 +232,44 @@ public class SurrogateMonth {
 			return false;
 		}
 	}
+	
+	 
+	
+	public String inputLogEntry(RunRecord rec,ArrayList<double[][]> inputs, InputSizeInfo sizeInfo, boolean failure) {
+        String SEP = ",";
+		int maxLag = sizeInfo.maxSize;
+		int aveType = 0; //TODO
+		String base = this.getDailySurrogate().identifier()
+		      + SEP + rec.year + SEP + rec.month + SEP + rec.cycle + SEP + aveType + SEP + failure;
+		int nbatch = sizeInfo.batchLen;
+		int nvar = sizeInfo.nVar;
+		int[] nLag = sizeInfo.innerDim;
+
+		StringBuilder batchsb = new StringBuilder(base.length()+16*maxLag);
+		for (int ivar=0; ivar < nvar; ivar++) {
+		    for (int ibatch=0; ibatch < nbatch; ibatch++) {
+
+		    	batchsb.append(base);
+		    	batchsb.append(SEP+ibatch+SEP+ivar);		    	
+			    for (int ndx = 0; ndx < nLag[ivar]; ndx++) {
+			    	batchsb.append(SEP+inputs.get(ivar)[ibatch][ndx]);
+			    }
+			    batchsb.append("\n");
+			}
+		}
+        return batchsb.toString();
+
+	}
+	
+	public String inputLogHeader(InputSizeInfo sizeInfo) {
+
+		int maxLag = sizeInfo.maxSize;
+		String base="surrogate_id,year,month,cycle,avetype,failed,batch,variable";
+		StringBuilder sb = new StringBuilder(maxLag*3);
+		sb.append(base);
+		for (int ilag=0; ilag< maxLag; ilag++) {
+			sb.append(","+"lag"+String.valueOf(ilag));
+		}
+		return sb.toString();
+	}
 }

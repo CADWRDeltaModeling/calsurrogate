@@ -24,6 +24,12 @@ public interface Surrogate extends DailyToSurrogate {
 	public float[][] estimate(ArrayList<double[][]> rawData, ArrayList<long[][]> rawDataInt);
 
 	/**
+	 * Return a class string or file name that helps identify the surrogate
+	 * @return
+	 */
+	public default String identifier() {return "None";}
+	
+	/**
 	 * Converts a forward-in-time time history with day of forecast at currentIndex
 	 * into whatever vector of aggregated history (blocks of averages, convolutions,
 	 * etc) used by the surrogate
@@ -37,5 +43,7 @@ public interface Surrogate extends DailyToSurrogate {
 	};
 
 	public DailyToSurrogate getDailyToSurrogate();
+	
+	
 
 }
