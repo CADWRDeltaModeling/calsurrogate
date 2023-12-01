@@ -70,7 +70,6 @@ public abstract class DisaggregateMonths {
 			YearMonth minus = yMonth.minusMonths((long) iMonth);
 			out[iMonth] = minus.lengthOfMonth();
 		}
-
 		return out;
 	}
 	
@@ -101,8 +100,6 @@ public abstract class DisaggregateMonths {
 	 */
 	public double[][] asIrregArray(int year, int month, double[] dataRev) {
 		double[][] ts = new double[2][nMonth + 1];
-		Random rand = new Random();
-		rand.setSeed(19);
 		ts[0][0] = 0.;
 		int[] dMon = daysMonth(year, month);
 		for (int iMonth = 0; iMonth < nMonth; iMonth++) {
