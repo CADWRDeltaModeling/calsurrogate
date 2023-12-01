@@ -3,6 +3,9 @@ package calsim.surrogate;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 
+/**
+ * The generic
+ */
 public class InputSizeInfo {
     
 	private ArrayList<double[][]> inputs;

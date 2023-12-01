@@ -55,6 +55,18 @@ public class RunRecord {
 				&& month == other.month && Objects.equals(surrogate, other.surrogate) && year == other.year;
 	}
 
+	/**
+	 * Used to hash and retrieve run results
+	 * @param surrogate
+	 * @param float0
+	 * @param float1
+	 * @param int0
+	 * @param int1
+	 * @param year
+	 * @param month
+	 * @param cycle
+	 * @param aveType
+	 */
 	public RunRecord(Surrogate surrogate, double float0, double float1, int int0, int int1, int year, int month,
 			int cycle, int aveType) {
 		this.floatInput0 = float0;

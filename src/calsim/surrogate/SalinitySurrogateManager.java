@@ -1,14 +1,20 @@
-package calsim.surrogate.examples;
+package calsim.surrogate;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
-
-import calsim.surrogate.*;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 class SurrogateIdentifier {
 	Integer location;
 	Integer aveType;
+	
 
 	public SurrogateIdentifier(int location, int aveType) {
 		location = location;
@@ -33,6 +39,10 @@ class SurrogateIdentifier {
 	}
 
 }
+
+
+
+
 
 /**
  * The SalinitySurrogateManager is a singleton meant to be subclassed and used
@@ -65,16 +75,38 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	final HashMap<RunRecord, double[][]> cachedGradient = new HashMap<RunRecord, double[][]>();
 	final HashMap<RunRecord, double[][]> cachedSurrogate = new HashMap<RunRecord, double[][]>();
 
+    private Logger LOGGER;
+    private boolean header=false;
+	
 	SalinitySurrogateManager() {
 		init();
 	}
 
-	public void init() {
-		//SurrogateMonth emmMonth = EmmatonExampleTensorFlowANN.emmatonSurrogateMonth();
-		//setSurrogateForSite(EMM_CALSIM, MEAN, emmMonth);
-		//calsimToSurrogateNdx.put(EMM_CALSIM, 0);
+	
+    private void init() {
+        LOGGER = Logger.getLogger("calsim.surrogate");
+        FileHandler handler;
+		try {
+			handler = new FileHandler("surrrogate_input.log");
+	        handler.setFormatter(new SimpleFormatter() {
+	            private static final String fmt = "%1$";
 
-	}
+	            @Override
+	            public synchronized String format(LogRecord lr) {
+	                return lr.getMessage();
+	            }
+	        });
+	        handler.setLevel(Level.INFO);
+	        LOGGER.setUseParentHandlers(false);
+	        LOGGER.addHandler(handler);
+
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }	
+	
 
 	public void setSurrogateForSite(int location, int aveType, SurrogateMonth surrogateMonth) {
 		SurrogateIdentifier hasher = new SurrogateIdentifier(location, aveType);
@@ -119,7 +151,64 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		return constraint[variable];
 
 	}
+	
+	public void logInputs(SurrogateMonth sm, RunRecord rec, ArrayList<double[][]> inputs, 
+			               boolean fail, String context, String comment) {
+	    InputSizeInfo sizeInfo = new InputSizeInfo(inputs);
+        logInputs(sm,rec,inputs,sizeInfo,fail,context,comment);
+	}	
 
+	public void logInputs(SurrogateMonth sm, RunRecord rec, ArrayList<double[][]> inputs,InputSizeInfo sizeInfo,
+			              boolean fail, String context, String comment) {
+        if (! this.header) {
+        	LOGGER.info(inputLogHeader(sizeInfo));
+        	header = true;
+        }
+		LOGGER.info(inputLogEntry(sm, rec, inputs, sizeInfo,fail,context,comment));
+	}
+	
+	public String inputLogEntry(SurrogateMonth sm, RunRecord rec,ArrayList<double[][]> inputs, InputSizeInfo sizeInfo, 
+			boolean failure, String context, String comment) {
+		String SEP = ",";
+		if (context == null) context = "";
+		if (comment == null) comment = "";
+		int maxLag = sizeInfo.maxSize;
+		int aveType = 0; //TODO
+		String base = sm.getDailySurrogate().identifier() + SEP + context + SEP 
+				+ SEP + rec.year + SEP + rec.month + SEP + rec.cycle + SEP + aveType + SEP + failure + SEP + comment;
+		int nbatch = sizeInfo.batchLen;
+		int nvar = sizeInfo.nVar;
+		int[] nLag = sizeInfo.innerDim;
+
+		StringBuilder batchsb = new StringBuilder(base.length()+16*maxLag);
+		for (int ivar=0; ivar < nvar; ivar++) {
+			for (int ibatch=0; ibatch < nbatch; ibatch++) {
+
+				batchsb.append(base);
+				batchsb.append(SEP+ibatch+SEP+ivar);		    	
+				for (int ndx = 0; ndx < nLag[ivar]; ndx++) {
+					batchsb.append(SEP+inputs.get(ivar)[ibatch][ndx]);
+				}
+				batchsb.append("\n");
+			}
+		}
+		return batchsb.toString();
+
+	}
+
+	public String inputLogHeader(InputSizeInfo sizeInfo) {
+
+		int maxLag = sizeInfo.maxSize;
+		String base="surrogate_id,context,year,month,cycle,avetype,failed,comment,batch,variable";
+		StringBuilder sb = new StringBuilder(maxLag*3);
+		sb.append(base);
+		for (int ilag=0; ilag< maxLag; ilag++) {
+			sb.append(","+"lag"+String.valueOf(ilag));
+		}
+		return sb.toString();
+	}	
+	
+	
 	public float annEC(ArrayList<double[][]> monthly, int location, int variable, int ave_type, int month, int year) {
 		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
 		int cyclePlaceholder = 0;
@@ -127,7 +216,8 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		double exp0 = 0.;
 		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, 0, 0, year, month, cyclePlaceholder,
 				ave_type);
-
+        this.logInputs(sm, rec, monthly, false, "annEC",null);
+		
 		if (cachedSurrogate.containsKey(rec)) {
 			double[][] cached = cachedSurrogate.get(rec);
 			int locIndex = 2; // TODO array index from calsim location

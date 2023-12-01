@@ -1,6 +1,7 @@
 package calsim.surrogate;
 
 import java.util.ArrayList;
+import java.util.logging.*;
 
 
 /**
@@ -15,6 +16,10 @@ public class SurrogateMonth {
 	private Surrogate daily;
     private int[] exogInputsNdx = {5};  // TODO: hardwired logic
     private DisaggregateMonths firstNonNullDisagg; // non-null used for length calculations
+
+    
+
+    
     
 	public SurrogateMonth(DisaggregateMonths[] disagg, 
 			              Surrogate daily, 
@@ -77,7 +82,7 @@ public class SurrogateMonth {
 	 *         by number of stations predicted
 	 */
 	public double[][] annMonth(ArrayList<double[][]> monthlyInputs, int year, int month) {
-
+        
 		ArrayList<double[][]> dailyInputs = new ArrayList<double[][]>();
 		int nvar = monthlyInputs.size();
 		int nbatch = monthlyInputs.get(0).length;
@@ -235,41 +240,5 @@ public class SurrogateMonth {
 	
 	 
 	
-	public String inputLogEntry(RunRecord rec,ArrayList<double[][]> inputs, InputSizeInfo sizeInfo, boolean failure) {
-        String SEP = ",";
-		int maxLag = sizeInfo.maxSize;
-		int aveType = 0; //TODO
-		String base = this.getDailySurrogate().identifier()
-		      + SEP + rec.year + SEP + rec.month + SEP + rec.cycle + SEP + aveType + SEP + failure;
-		int nbatch = sizeInfo.batchLen;
-		int nvar = sizeInfo.nVar;
-		int[] nLag = sizeInfo.innerDim;
 
-		StringBuilder batchsb = new StringBuilder(base.length()+16*maxLag);
-		for (int ivar=0; ivar < nvar; ivar++) {
-		    for (int ibatch=0; ibatch < nbatch; ibatch++) {
-
-		    	batchsb.append(base);
-		    	batchsb.append(SEP+ibatch+SEP+ivar);		    	
-			    for (int ndx = 0; ndx < nLag[ivar]; ndx++) {
-			    	batchsb.append(SEP+inputs.get(ivar)[ibatch][ndx]);
-			    }
-			    batchsb.append("\n");
-			}
-		}
-        return batchsb.toString();
-
-	}
-	
-	public String inputLogHeader(InputSizeInfo sizeInfo) {
-
-		int maxLag = sizeInfo.maxSize;
-		String base="surrogate_id,year,month,cycle,avetype,failed,batch,variable";
-		StringBuilder sb = new StringBuilder(maxLag*3);
-		sb.append(base);
-		for (int ilag=0; ilag< maxLag; ilag++) {
-			sb.append(","+"lag"+String.valueOf(ilag));
-		}
-		return sb.toString();
-	}
 }

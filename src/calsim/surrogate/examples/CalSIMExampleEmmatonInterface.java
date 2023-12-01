@@ -10,6 +10,7 @@ import calsim.surrogate.DisaggregateMonthsRepeat;
 import calsim.surrogate.DisaggregateMonthsSpline;
 import calsim.surrogate.LinearConstraint;
 import calsim.surrogate.MockSurrogate;
+import calsim.surrogate.SalinitySurrogateManager;
 import calsim.surrogate.Surrogate;
 import calsim.surrogate.SurrogateMonth;
 

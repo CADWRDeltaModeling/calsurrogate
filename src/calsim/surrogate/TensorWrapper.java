@@ -128,4 +128,5 @@ public class TensorWrapper implements Surrogate {
 		return dayToANN;
 	}
 
+	public String identifier() {return this.fpath;}
 }
