@@ -89,8 +89,6 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		try {
 			handler = new FileHandler("surrrogate_input.log");
 	        handler.setFormatter(new SimpleFormatter() {
-	            private static final String fmt = "%1$";
-
 	            @Override
 	            public synchronized String format(LogRecord lr) {
 	                return lr.getMessage();
