@@ -49,7 +49,7 @@ public class LinearConstraint {
 		}
 
 		// Now perturb Sac and Exports
-		int iPert = 0;
+		int iPert = 0;  // iPert = 0 is unperturbed
 		for (int iLoc = 0; iLoc < 2; iLoc++) { // TODO HARDWIRED sac and exp location in array
 			for (int ip = 0; ip < perturb.length; ip++) {
 				iPert += 1;
@@ -103,7 +103,7 @@ public class LinearConstraint {
 	 * @param aveType             Basis of summarizing water quality compliance.
 	 * @return void
 	 */
-	public double[] formulateConstraint(double[] valGradient, double targetWQ, double sac0, double exp0) {
+	public double[] formulateConstraint(double[] valGradient, double sac0, double exp0, double targetWQ) {
 
 		// reorganize this:
 		// S0 + dS/dSac * (Sac - Sac0) + dS/dExp * (Exp - Exp0) < target
@@ -121,6 +121,16 @@ public class LinearConstraint {
 		double sacCoef = valGradient[LinearConstraint.DSAC_NDX];
 		double expCoef = valGradient[LinearConstraint.DEXP_NDX];
 		double[] constraintCoefs = { rhs, sacCoef, expCoef };
+		boolean verbose = true;
+		if(verbose) {
+			System.out.println("targetWQ");
+			System.out.println(targetWQ);
+			System.out.println("sac0");
+			System.out.println(sac0);
+			System.out.println("exp0");
+			System.out.println(exp0);
+			System.out.println("Coefs: "+ rhs +" "+sacCoef+ " "+ expCoef );
+		}
 		return constraintCoefs;
 	}
 

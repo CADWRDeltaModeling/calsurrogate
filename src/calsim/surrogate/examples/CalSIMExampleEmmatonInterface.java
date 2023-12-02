@@ -130,7 +130,7 @@ public class CalSIMExampleEmmatonInterface {
 				Arrays.asList(sac, exp, dcc, dcd, sjr, tide, smscg));
 
 		ave_type = 0; // TODO hardwired to mean, which isn't right here
-		float out = (float) manager.lineGenImpl(monthlyInput, location, variable, ave_type, currMonth, currYear);	
+		float out = (float) manager.lineGenImpl(monthlyInput, location, variable, ave_type, currMonth, currYear,Qsac_est,Qexp_est,ECTARGET);	
 		
 		return out;
 	}

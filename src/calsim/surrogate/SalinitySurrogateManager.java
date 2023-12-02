@@ -14,7 +14,7 @@ import java.util.logging.SimpleFormatter;
 class SurrogateIdentifier {
 	Integer location;
 	Integer aveType;
-	
+
 
 	public SurrogateIdentifier(int location, int aveType) {
 		location = location;
@@ -75,36 +75,39 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	final HashMap<RunRecord, double[][]> cachedGradient = new HashMap<RunRecord, double[][]>();
 	final HashMap<RunRecord, double[][]> cachedSurrogate = new HashMap<RunRecord, double[][]>();
 
-    private Logger LOGGER;
-    private boolean header=false;
-	
+	private Logger LOGGER = null;
+	private boolean header=false;
+	boolean isLogging = false;
+
 	SalinitySurrogateManager() {
 		init();
 	}
 
-	
-    private void init() {
-        LOGGER = Logger.getLogger("calsim.surrogate");
-        FileHandler handler;
-		try {
-			handler = new FileHandler("surrrogate_input.log");
-	        handler.setFormatter(new SimpleFormatter() {
-	            @Override
-	            public synchronized String format(LogRecord lr) {
-	                return lr.getMessage();
-	            }
-	        });
-	        handler.setLevel(Level.INFO);
-	        LOGGER.setUseParentHandlers(false);
-	        LOGGER.addHandler(handler);
 
+	private void init() {}
+
+	public void enableLogging(String logDir) {
+		LOGGER = Logger.getLogger("calsim.surrogate");
+		FileHandler handler;
+		try {
+			handler = new FileHandler(logDir);
+			handler.setFormatter(new SimpleFormatter() {
+				@Override
+				public synchronized String format(LogRecord lr) {
+					return lr.getMessage();
+				}
+			});
+			handler.setLevel(Level.INFO);
+			LOGGER.setUseParentHandlers(false);
+			LOGGER.addHandler(handler);
+			this.isLogging = true;
 		} catch (SecurityException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-    }	
-	
+	}	
+
 
 	public void setSurrogateForSite(int location, int aveType, SurrogateMonth surrogateMonth) {
 		SurrogateIdentifier hasher = new SurrogateIdentifier(location, aveType);
@@ -117,17 +120,17 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	}
 
 	public double lineGenImpl(ArrayList<double[][]> monthlyInput, int location, int variable, int ave_type, int month,
-			int year) {
+			int year, double sac0, double exp0, double targetWQ) {
 
-		double sac0 = 0.; // TODO
-		double exp0 = 0.; // TODO
-		double targetWQ = 0.0; // TODO
+		//double sac0 = 0.; // TODO
+		//double exp0 = 0.; // TODO
+		//double targetWQ = 0.0; // TODO
 		double[][] grad = null;
 		int siteNDX = 0; // TODO
 
 		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
 		LinearConstraint linear = new LinearConstraint(sm); // TODO Alternatively a lot of LInearConstraint could be
-															// static
+		// static
 
 		int cyclePlaceholder = 0;
 		// TODO what are the 0,0 on second line?
@@ -144,27 +147,40 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 			cachedGradient.put(rec, grad); // Caches for next time
 
 		}
-		double[] constraint = linear.formulateConstraint(grad[siteNDX], targetWQ, sac0, exp0);
+		boolean verbose = true;
+		if(verbose) {
+			System.out.println("lineGenImpl grad");
+			System.out.println(grad[siteNDX][0]+" "+grad[siteNDX][1]+" "+grad[siteNDX][2]);
+			System.out.println("targetWQ");
+			System.out.println(targetWQ);
+			System.out.println("sac0");
+			System.out.println(sac0);
+			System.out.println("exp0");
+			System.out.println(exp0);
+		}
+		double[] constraint = linear.formulateConstraint(grad[siteNDX], sac0, exp0, targetWQ);
 
 		return constraint[variable];
 
 	}
-	
+
 	public void logInputs(SurrogateMonth sm, RunRecord rec, ArrayList<double[][]> inputs, 
-			               boolean fail, String context, String comment) {
-	    InputSizeInfo sizeInfo = new InputSizeInfo(inputs);
-        logInputs(sm,rec,inputs,sizeInfo,fail,context,comment);
+			boolean fail, String context, String comment) {
+		if (! isLogging) return;
+		InputSizeInfo sizeInfo = new InputSizeInfo(inputs);
+		logInputs(sm,rec,inputs,sizeInfo,fail,context,comment);
 	}	
 
 	public void logInputs(SurrogateMonth sm, RunRecord rec, ArrayList<double[][]> inputs,InputSizeInfo sizeInfo,
-			              boolean fail, String context, String comment) {
-        if (! this.header) {
-        	LOGGER.info(inputLogHeader(sizeInfo));
-        	header = true;
-        }
+			boolean fail, String context, String comment) {
+		if (! this.isLogging) return;
+		if (! this.header) {
+			LOGGER.info(inputLogHeader(sizeInfo));
+			header = true;
+		}
 		LOGGER.info(inputLogEntry(sm, rec, inputs, sizeInfo,fail,context,comment));
 	}
-	
+
 	public String inputLogEntry(SurrogateMonth sm, RunRecord rec,ArrayList<double[][]> inputs, InputSizeInfo sizeInfo, 
 			boolean failure, String context, String comment) {
 		String SEP = ",";
@@ -205,8 +221,8 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		}
 		return sb.toString();
 	}	
-	
-	
+
+
 	public float annEC(ArrayList<double[][]> monthly, int location, int variable, int ave_type, int month, int year) {
 		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
 		int cyclePlaceholder = 0;
@@ -214,8 +230,8 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		double exp0 = 0.;
 		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, 0, 0, year, month, cyclePlaceholder,
 				ave_type);
-        this.logInputs(sm, rec, monthly, false, "annEC",null);
-		
+		this.logInputs(sm, rec, monthly, false, "annEC",null);
+
 		if (cachedSurrogate.containsKey(rec)) {
 			double[][] cached = cachedSurrogate.get(rec);
 			int locIndex = 2; // TODO array index from calsim location
