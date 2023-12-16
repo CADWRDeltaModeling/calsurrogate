@@ -24,11 +24,17 @@ public abstract class BrentSolver implements LineSearchable {
 
 	private double min = 0.;
 	private double max = 1.;
+	
+	public final double HIGH = 1.;
+	public final double LOW = -1.;
+	private double resultSign = 0.;
 
 	private double absoluteAccuracy = 1e-6;
 	private double relativeAccuracy = 1e-5;
 	private double functionAccuracy = 1.e-4;
 
+	private final boolean verbose=false;
+	
 	public double getAbsoluteAccuracy() {
 		return absoluteAccuracy;
 	}
@@ -47,15 +53,15 @@ public abstract class BrentSolver implements LineSearchable {
 
 	public double computeObjectiveValue(double z) {
 		double[] x = getStart();
-		System.out.println("x=" + x[0] + "," + x[1]);
+		if (verbose) System.out.println("x=" + x[0] + "," + x[1]);
 		double[] xrev = new double[2];
 		for (int i = 0; i < x.length; i++) {
 			xrev[i] = x[i] + z * this.getSearchDir()[i];
 
 		}
-		System.out.println("xrev " + xrev[0] + " " + xrev[1]);
+		if (verbose) System.out.println("xrev " + xrev[0] + " " + xrev[1]);
 		double xout = this.eval(xrev);
-		System.out.println(
+		if (verbose) System.out.println(
 				"evaluated scalar loc: " + z + " at x[0]" + xrev[0] + " x[1] " + xrev[1] + " gives xout: " + xout);
 		return this.eval(xrev);
 	}
@@ -73,11 +79,14 @@ public abstract class BrentSolver implements LineSearchable {
 		return (this.min + this.max) / 2.;
 	}
 
+	
+	
 	public double doSolve() {
 		double min = getMin();
 		double max = getMax();
 		final double initial = getStartValue();
 		final double functionValueAccuracy = getFunctionAccuracy();
+		resultSign=0.;
 
 		// verifySequence(min, initial, max);
 
@@ -93,11 +102,11 @@ public abstract class BrentSolver implements LineSearchable {
 			return min;
 		}
 
-		System.out.println("ok initial " + initial + " min " + min + " yInitial " + yInitial + " ymin " + yMin);
+		//System.out.println("ok initial " + initial + " min " + min + " yInitial " + yInitial + " ymin " + yMin);
 
 		// Reduce interval if min and initial bracket the root.
 		if (yInitial * yMin < 0) {
-			System.out.println("A initial " + initial + " min " + min + "yInit" + yInitial + " " + yMin);
+			if (verbose)  System.out.println("A initial " + initial + " min " + min + "yInit" + yInitial + " " + yMin);
 			return brent(min, initial, yMin, yInitial);
 		}
 
@@ -109,11 +118,13 @@ public abstract class BrentSolver implements LineSearchable {
 
 		// Reduce interval if initial and max bracket the root.
 		if (yInitial * yMax < 0) {
-			System.out.println("B initial " + initial + " max " + max + "yInit" + yInitial + " " + yMax);
+			if (verbose) System.out.println("B initial " + initial + " max " + max + "yInit" + yInitial + " " + yMax);
 			return brent(initial, max, yInitial, yMax);
 		}
-
-		throw new IndexOutOfBoundsException("No bracketing values");
+        
+		if (verbose) System.out.println("yinit " + yInitial + " yMax "+yMax+" ymin "+ yMin );
+		
+		return yInitial > 0. ? (getMax()+1) : (getMin()-1.); // TODO figure out what to do here//throw new IndexOutOfBoundsException("No bracketing values");
 	}
 
 	/**
