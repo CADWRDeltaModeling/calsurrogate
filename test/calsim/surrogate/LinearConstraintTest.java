@@ -2,12 +2,14 @@ package calsim.surrogate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import calsim.surrogate.examples.*;
+import calsim.surrogate.AggregateMonths;
 
 class LinearConstraintTest {
 
@@ -41,7 +43,7 @@ class LinearConstraintTest {
 		int cycle = 0;
 		int constraintComponent = 0;
 		int location = 0;
-		int aveType = 1;
+		int aveType = AggregateMonths.MONTHLY_MEAN.calsimCode;
 		double targetWQ = 2500;
 
 		double[][] grad = linear.gradient(floatInput, year, month);
@@ -86,7 +88,7 @@ class LinearConstraintTest {
 		int cycle = 0;
 		int constraintComponent = 0;
 		int location = 0;
-		int aveType = 1;
+		int aveType = AggregateMonths.MONTHLY_MEAN.calsimCode;
 
 		double[][] grad = linear.gradient(floatInput, year, month);
 		// out[0][0] is the value at location 0
@@ -139,7 +141,7 @@ class LinearConstraintTest {
 		int year = 1925;
 		int month = 8;
 		int location = 0;
-		int aveType = 1;
+		int aveType = AggregateMonths.MONTHLY_MEAN.calsimCode;
 
 		double[][] grad = linear.gradient(floatInput, year, month);
 		// out[0][0] is the value at location 0
