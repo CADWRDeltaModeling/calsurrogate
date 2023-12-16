@@ -13,9 +13,21 @@ import java.util.logging.SimpleFormatter;
 
 class SurrogateIdentifier {
 	Integer location;
-	Integer aveType;
+	Integer aveType;     //	See AggregateMonths.calsimCode for integer keys and values
+    /*
+	   AVE_TYPE KEY:
+		      1 = monthly average
+		      2 = first day of month value
+		      3 = last day of month value
+		      4 = maximum daily value
+		      5 = minimum daily vlaue
+		      6 = maximum 14-day value
+		      7 = average for first 15 days
+		      8 = average for last 15 days
+		      37 = average for last 7 day
+	*/
 
-
+	
 	public SurrogateIdentifier(int location, int aveType) {
 		location = location;
 		aveType = aveType;
@@ -66,12 +78,17 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	public final int CLL_CALSIM = 5; // Collinsville
 	public final int MAL_CALSIM = 6; // Mallard is Chipps
 	public final int BDL_CALSIM = 20; // Beldons Landing
+	
 
-	// Only Monthly mean
-	public final int MEAN = 0; // TODO this might not be right. Check WRESL
+	// Only Monthly mean and maximum of 14-day running ave are implemented
+	// and for 14-day running ave the actual implementation is truncated as explained
+	// in the aggregateMonth code.
+	
+	public final int MONTHLY_AVE = 1; 
+	public final int MAX_14 = 6;
 
 	final HashMap<SurrogateIdentifier, SurrogateMonth> surrogateForLoc = new HashMap<SurrogateIdentifier, SurrogateMonth>();
-	final HashMap<Integer, Integer> calsimToSurrogateNdx = new HashMap<Integer, Integer>();
+	final HashMap<Integer, Integer> surrogateNdx = new HashMap<Integer, Integer>();
 	final HashMap<RunRecord, double[][]> cachedGradient = new HashMap<RunRecord, double[][]>();
 	final HashMap<RunRecord, double[][]> cachedSurrogate = new HashMap<RunRecord, double[][]>();
 
@@ -108,31 +125,68 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		}
 	}	
 
-
+    /**
+     * Set the output index for location within the surrogates output 
+     * @param location CalSim location
+     * @param index within surrogate output
+     */
+	public void setIndexForSite(int location, int index) {
+		this.surrogateNdx.put(Integer.valueOf(location), Integer.valueOf(index));
+	}
+	
+	public int getIndexForSite(int calsimLocation) {
+	    //return this.surrogateNdx.get(Integer.valueOf(calsimLocation)).intValue();
+	    return 0;  //TODO hardwire
+	}
+	
+	/**
+	 * Set Surrogate for location
+	 * @param location (is this the CalSim code?) //TODO document this
+	 * @param aveType  average type (is this the calsim Code?) //TODO document this 
+	 * @param surrogateMonth
+	 */
 	public void setSurrogateForSite(int location, int aveType, SurrogateMonth surrogateMonth) {
 		SurrogateIdentifier hasher = new SurrogateIdentifier(location, aveType);
 		surrogateForLoc.put(hasher, surrogateMonth);
 	}
 
+	/**
+	 * Get surrogate for location
+	 * @param location (is this the CalSim code??)
+	 * @param aveType average type (is this the calsim code?) //TODO document this 
+	 * @return
+	 */
 	public SurrogateMonth getSurrogateForSite(int location, int aveType) {
 		SurrogateIdentifier hasher = new SurrogateIdentifier(location, aveType);
 		return surrogateForLoc.get(hasher);
 	}
+	
+    /**
+     * 
+     * @param monthlyInput
+     * @param location
+     * @param variable parameter of constraint being requested. See documentation for LinearConstraint
+     * @param ave_type Calsim code corresponding to aggregateMonth
+     * @param month Calendar month of call
+     * @param year  Calendar year of call
+     * @param sac0  Nominal Sacramento R. Flow around which linearization is structured 
+     * @param exp0  Nominal Export around which linearization is structured
+     * @param targetWQ EC objective that informs constraint
+     * @return
+     */
+	public double lineGenImpl(ArrayList<double[][]> monthlyInput, int location, int variable, 
+			int ave_type, int month,int year, double sac0, double exp0, double targetWQ) {
 
-	public double lineGenImpl(ArrayList<double[][]> monthlyInput, int location, int variable, int ave_type, int month,
-			int year, double sac0, double exp0, double targetWQ) {
-
-		//double sac0 = 0.; // TODO
-		//double exp0 = 0.; // TODO
-		//double targetWQ = 0.0; // TODO
+		int cyclePlaceholder = 0; // TODO hardwired, need to use the actual cycle
+		
 		double[][] grad = null;
-		int siteNDX = 0; // TODO
+		int siteNDX = this.getIndexForSite(location);
 
 		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
 		LinearConstraint linear = new LinearConstraint(sm); // TODO Alternatively a lot of LInearConstraint could be
 		// static
 
-		int cyclePlaceholder = 0;
+
 		// TODO what are the 0,0 on second line?
 		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, 0, 0, year, month, cyclePlaceholder,
 				ave_type);
@@ -187,7 +241,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		if (context == null) context = "";
 		if (comment == null) comment = "";
 		int maxLag = sizeInfo.maxSize;
-		int aveType = 0; //TODO
+		int aveType = sm.getAgg().calsimCode;
 		String base = sm.getDailySurrogate().identifier() + SEP + context + SEP 
 				+ SEP + rec.year + SEP + rec.month + SEP + rec.cycle + SEP + aveType + SEP + failure + SEP + comment;
 		int nbatch = sizeInfo.batchLen;
@@ -210,6 +264,11 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 
 	}
 
+	/**
+	 * Generates Input log header given information about the size of the input tensor
+	 * @param sizeInfo
+	 * @return
+	 */
 	public String inputLogHeader(InputSizeInfo sizeInfo) {
 
 		int maxLag = sizeInfo.maxSize;
@@ -224,27 +283,70 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 
 
 	public float annEC(ArrayList<double[][]> monthly, int location, int variable, int ave_type, int month, int year) {
+		// TODO: Why is there a variable argument. Isn't this just for linegen?
 		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
-		int cyclePlaceholder = 0;
-		double sac0 = 0.;
+		int cyclePlaceholder = 0; // TODO use actual cycle unless that is a bad idea
+		double sac0 = 0.;         // TODO this seems to cripple any storage
 		double exp0 = 0.;
 		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, 0, 0, year, month, cyclePlaceholder,
 				ave_type);
 		this.logInputs(sm, rec, monthly, false, "annEC",null);
-
+		// index within the surrogate output of the site of interest
+        int locIndex = this.getIndexForSite(location); //TODO this got hardwired to zero early on, is it fixed?
+		
 		if (cachedSurrogate.containsKey(rec)) {
 			double[][] cached = cachedSurrogate.get(rec);
-			int locIndex = 2; // TODO array index from calsim location
-			return (float) cached[0][0]; // cachedSurrogate(rec,location); // TODO which variable??
+			return (float) cached[0][locIndex]; // cachedSurrogate(rec,location); // TODO add index for variable
 		} else if (cachedGradient.containsKey(rec)) {
 			double[][] cached = cachedGradient.get(rec);
 			cachedSurrogate.put(rec, cached);
-			return (float) cached[0][0];
+			return (float) cached[0][locIndex];    // TODO: lacks index for location
 		} else {
 			double[][] eval = sm.annMonth(monthly, year, month);
 			((HashMap<RunRecord, double[][]>) cachedSurrogate).put(rec, eval);
-			return (float) eval[0][0];
+			return (float) eval[0][locIndex];     // TODO lacks index for variable
 		}
 	}
 
+	/**
+	 * Given historical input, location find the required Sacramento flow to meet 
+	 * a salinity or EC Target if such a value lies between sacLoBound and sacHiBound.
+	 * Currently there is no attempt at caching here. 
+	 * @param target EC Target
+	 * @param monthlyInputs Monthly inputs. Current period Sac can be junk -- it is not used
+	 * @param sacLoBound Lower bound for search
+	 * @param sacHiBound Upper bound for search
+	 * @param location Location where target is to be met
+	 * @param ave_type averaging used
+	 * @param month calendar month
+	 * @param year calendar year
+	 * @returns Required flow. If required flow is above sacHiBound, returns a number above sacHiBound. 
+	 * If required flow is below sacLoBound, returns a number below sacLoBound. Currently +/- 999999.
+	 */
+	public float requiredSac(double target, ArrayList<double[][]> monthlyInputs, 
+			double sacLoBound, double sacHiBound, int location,
+			int ave_type, int month, int year) {
+		SurrogateMonth sm = getSurrogateForSite(location,ave_type);
+		InverseSurrogateMonth ism = new InverseSurrogateMonth(sm);
+		int hardwiredLoc = 0;
+		int sacIndex=0;
+		double req = ism.invert(target, monthlyInputs, sacIndex, sacLoBound, sacHiBound, 
+				          year, month, hardwiredLoc);
+
+		if (req > sacHiBound) {
+			// Salinity target was not feasible
+			req =  999999.;
+		}
+		if (req< sacLoBound) {
+			req = -999999.;
+		}
+		return (float) req;
+	}
+	
+	
+//TODO: there are a lot of "placeholderCycles that need to be replaced
+// Need to make sure that the output location stuff is OK. surrogateForSite seems fine, but is the indexing used too?
+	
+	
 }
+

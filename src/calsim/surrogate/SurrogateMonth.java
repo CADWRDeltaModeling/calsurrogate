@@ -13,6 +13,10 @@ public class SurrogateMonth {
 
 	private DisaggregateMonths[] disagg;
 	private AggregateMonths agg;
+	public AggregateMonths getAgg() {
+		return agg;
+	}
+
 	private Surrogate daily;
     private int[] exogInputsNdx = {5};  // TODO: hardwired logic
     private DisaggregateMonths firstNonNullDisagg; // non-null used for length calculations

@@ -19,8 +19,16 @@ class AggregateMonthsTest {
 		AggregateMonths mmax = AggregateMonths.MONTHLY_MAX;
 		System.out.println(mmax.aggregate(data, 85, 1, 20));
 
-		AggregateMonths mmax14 = AggregateMonths.MONTHLY_MAX_14D;
+		AggregateMonths mmax14 = AggregateMonths.MONTHLY_MAX_14D_TRUNCATED;
 		System.out.println(mmax14.aggregate(data, 85, 1, 20));
+        
+		System.out.println(mmax14.calsimCode);
+		
+		for (AggregateMonths agg : AggregateMonths.values()) {
+		    System.out.println(agg.calsimCode);
+		}
 	}
+	
+	
 
 }
