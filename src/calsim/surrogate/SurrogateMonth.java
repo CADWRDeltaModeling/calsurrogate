@@ -70,6 +70,80 @@ public class SurrogateMonth {
 			System.arraycopy(arr[0], 0, arr[jbatch], 0, arr[0].length);
 		}
 	}
+
+	/**
+	 * Takes output for which variation in variable 0 and 1 as a grid has been flattened 
+	 * to a 1D batch and puts it back in 2D for each of the input dims.
+	 * The third dimension in the output is for output dimensions (for instance
+	 * if surrogate makes multivariate predictions)
+	 * @param arr The flattened version, with dimensions for batch dim and output dims
+	 * @param nx0 Number of gridded values of input variable 0, which will occupy index 0 in result
+	 * @param nx1 Number of gridded values of input variable 1, which will be index 1 in result
+	 */
+	private double[][][] expandLinear(double[][] arr,int nx0, int nx1){
+		int nBatch = arr.length;
+		int nOut = arr[0].length;
+		double[][][] out = new double[nx0][nx1][nOut];
+		int iBatch = 0;
+		for (int i = 0; i < nx0 ; i++) {
+			for (int j=0; j < nx1; j++) {
+				System.arraycopy(arr[iBatch], 0, out[i][j], 0, arr[iBatch].length);
+				iBatch++;
+			}
+		}
+
+		return out;
+	}
+	
+	
+    public GridResult evaluateOnGrid(ArrayList<double[][]> monthlyInputs, int year, int month,
+    		double loBound0, double hiBound0, int nx0, double loBound1, double hiBound1, int nx1) {
+    	double[] x0 = new double[nx0];
+    	double[] x1 = new double[nx1];
+    	double nx0m1 = (double) (nx0-1);
+    	double nx1m1 = (double) (nx1-1);
+    	// These are the gridded values on variable 0 and variable 1 that will be evaluated
+    	for (int i = 0; i < nx0; i++) {
+    		double iFloat = (double) i;
+    		x0[i] = loBound0 + (iFloat/nx0m1)*(hiBound0 - loBound0);
+    	}
+    	for (int j = 0; j < nx1; j++) {
+    		double iFloat = (double) j;
+    		x1[j] = loBound1 + (iFloat/nx1m1)*(hiBound1 - loBound1);
+    	}
+    	// Create a batch the size of all the gridded inputs
+    	// and copy the original inputs into every batch member 
+    	int nBatch = nx0*nx1;
+    	ArrayList<double[][]> gridded = new ArrayList<double[][]>();
+    	for (int iVar = 0; iVar < monthlyInputs.size(); iVar++) {
+    	    int arrDim = monthlyInputs.get(iVar)[0].length;
+    	    double[][] batched = new double[nBatch][arrDim];
+    	    for (int ibatch = 0; ibatch < nBatch; ibatch++) {
+    	    	batched[ibatch] = new double[arrDim];
+    	    	// Duplicate the original inputs for every batch member
+    	    	System.arraycopy(monthlyInputs.get(iVar)[0], 0, batched[ibatch], 0, arrDim); 
+    	    }
+    	    gridded.add(batched);
+    	    
+    	}
+    	// Now for variable 0 and 1, go back and replace the first index (batch 0 lag 0) 
+    	// of variables 0 and 1 using the gridded values. 
+    	int iBatch = 0;
+    	for (int i = 0; i<nx0; i++) {
+    		for (int j = 0; j<nx1; j++) {
+    			gridded.get(0)[iBatch][0] = x0[i];
+    			gridded.get(1)[iBatch][0] = x1[j];
+    			iBatch++;
+    		}
+    	}
+    	
+    	double[][] result = this.annMonth(gridded, year, month);
+    	double[][][] resultFullDim = expandLinear(result,nx0,nx1);
+   	
+    	return new GridResult(x0, x1, gridded, resultFullDim, month, year);
+    }
+	
+	
 	
 	/**
 	 * Complete application of the ANN or other surrogate. Disaggregates monthly

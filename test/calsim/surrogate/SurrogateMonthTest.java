@@ -43,10 +43,22 @@ class SurrogateMonthTest {
 		int month = 10;
 
 		double[][] monthly = annMonth.annMonth(floatInput, year, month);
-		System.out.println("ok");
-		System.out.println(monthly.length);
-		System.out.println(monthly[1].length);
-
+		
+		int nx0 = 22;
+		int nx1 = 24;
+		GridResult grid = annMonth.evaluateOnGrid(floatInput, year, month, 4000.,25000.,nx0, 500, 12000,  nx1);
+		
+		for (int i = 0; i<nx0; i++) {
+			for (int j=0; j<nx1; j++) {
+				System.out.println("x0="+grid.getGridInput0()[i]+" x1="+grid.getGridInput1()[j]+" res="+grid.getResult()[i][j][0]);			
+			}
+		}
+		for (int i = 0; i<nx0; i++) {
+			for (int j=0; j<nx1; j++) {
+				System.out.println(grid.getGridInput0()[i]+","+grid.getGridInput1()[j]+","+grid.getResult()[i][j][0]);			
+			}
+		}		
+		
 	}
 
 

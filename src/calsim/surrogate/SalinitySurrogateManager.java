@@ -91,6 +91,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	final HashMap<Integer, Integer> surrogateNdx = new HashMap<Integer, Integer>();
 	final HashMap<RunRecord, double[][]> cachedGradient = new HashMap<RunRecord, double[][]>();
 	final HashMap<RunRecord, double[][]> cachedSurrogate = new HashMap<RunRecord, double[][]>();
+	final HashMap<RunRecord, GridResult> cachedGridResult = new HashMap<RunRecord, GridResult>();
 
 	private Logger LOGGER = null;
 	private boolean header=false;
@@ -126,14 +127,19 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	}	
 
     /**
-     * Set the output index for location within the surrogates output 
-     * @param location CalSim location
+     * Set the output index that applies for an encoded location  
+     * @param location the CalSim location that will be sent in
      * @param index within surrogate output
      */
 	public void setIndexForSite(int location, int index) {
 		this.surrogateNdx.put(Integer.valueOf(location), Integer.valueOf(index));
 	}
 	
+	/**
+	 * Get the index in the surrogate output that corresponds to a CalSim location code sent in from WRESL
+	 * @param calsimLocation
+	 * @return
+	 */
 	public int getIndexForSite(int calsimLocation) {
 	    //return this.surrogateNdx.get(Integer.valueOf(calsimLocation)).intValue();
 	    return 0;  //TODO hardwire
@@ -161,6 +167,9 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		return surrogateForLoc.get(hasher);
 	}
 	
+	
+
+	
     /**
      * 
      * @param monthlyInput
@@ -176,20 +185,58 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
      */
 	public double lineGenImpl(ArrayList<double[][]> monthlyInput, int location, int variable, 
 			int ave_type, int month,int year, double sac0, double exp0, double targetWQ) {
-
+		boolean verbose = false;
 		int cyclePlaceholder = 0; // TODO hardwired, need to use the actual cycle
 		
 		double[][] grad = null;
 		int siteNDX = this.getIndexForSite(location);
 
 		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
-		LinearConstraint linear = new LinearConstraint(sm); // TODO Alternatively a lot of LInearConstraint could be
-		// static
+		LinearConstraint linear = new LinearConstraint(sm); 
 
 
 		// TODO what are the 0,0 on second line?
-		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, 0, 0, year, month, cyclePlaceholder,
+		int int0 = 5;  // batch size
+		int int1 = 0;
+		//System.out.println("Generating Run Record in linegen yr/mon "+year+" "+month );
+		//System.out.println( monthlyInput.get(0)[0][0]   +  " " + monthlyInput.get(1)[0][0] +  " "
+		//                    + monthlyInput.get(2)[0][0] +  " " + monthlyInput.get(3)[0][0] +  " " 
+		//		            + monthlyInput.get(3)[0][0] +  " " + monthlyInput.get(4)[0][0] +  " " 
+		//                    + monthlyInput.get(5)[0][0]);
+		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, int0, int1, year, month, cyclePlaceholder,
 				ave_type);
+		
+		GridResult gr;
+		double loBound0=4000; double hiBound0=22000;
+		double loBound1=800.; double hiBound1=12800;
+		if (this.cachedGridResult.containsKey(rec)) {
+			gr = cachedGridResult.get(rec);
+		}else {
+			gr = sm.evaluateOnGrid(monthlyInput, year, month, loBound0, hiBound0, 4, loBound1, hiBound1, 3);
+			cachedGridResult.put(rec,gr);
+		}
+		
+		int feasible = assessFeasible(gr, siteNDX, targetWQ);  //TODO in early prototypes siteNDX should be 0
+		if (verbose) {
+			if (feasible > 0) {
+				System.out.println("Year "+year+ " Month "+ month + " infeasible ++++++++++++++++++");
+	
+			}
+			if (feasible < 0) {
+				System.out.println("Year "+year+ " Month "+ month + " always  feasible ---------------");
+	
+			}
+			if (feasible == 0) {
+				System.out.println("Year "+year+ " Month "+ month + " sometimes feasible ==============");
+			}
+		}
+		if (feasible < 0) { // return trivial values to indicate sac - exp > 0.
+			double[] alwaysFeasibleConstraint = {1.,-1., 0.};
+			return alwaysFeasibleConstraint[variable];
+		} else if(feasible > 0) { // return reasonable behavior for infeasible case
+			double[] neverFeasibleConstraint = {1.,-1.,hiBound0-loBound1};
+			return neverFeasibleConstraint[variable]; // TODO Move this to magic? 
+		}
 
 		if (cachedGradient.containsKey(rec)) {
 			int index = 0; // TODO indexForLocation
@@ -201,7 +248,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 			cachedGradient.put(rec, grad); // Caches for next time
 
 		}
-		boolean verbose = true;
+
 		if(verbose) {
 			System.out.println("lineGenImpl grad");
 			System.out.println(grad[siteNDX][0]+" "+grad[siteNDX][1]+" "+grad[siteNDX][2]);
@@ -217,6 +264,36 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		return constraint[variable];
 
 	}
+
+	/** Return > 0 if infeasible, < 0 if always feasible and 0 if varies over range
+	 * 
+	 * @param gr
+	 * @param siteNdx
+	 * @param targetWQ
+	 * @return
+	 */
+	private int assessFeasible(GridResult gr, int siteNdx, double targetWQ) {
+		int nx0 = gr.getGridInput0().length;
+		int nx1 = gr.getGridInput1().length;
+		boolean allNeg = true;
+		boolean allPos = true;
+		for (int i=0; i< nx0; i++) {
+			for (int j=0; j<nx1; j++) {
+				// System.out.println("assessFeasible WQ target="+targetWQ+ " " + gr.getResult()[i][j][siteNdx]);
+				
+				double est = gr.getResult()[i][j][siteNdx];
+			    if (est > targetWQ) { allNeg=false;}
+			    else if (est < targetWQ) { allPos=false; }
+			    if (! (allNeg || allPos)) return 0;  // truncate early if we already know the case is mixed
+			    	
+			}
+		}
+		// TODO check sure not allPos and allNeg
+		int ret = allPos ? 1 : 0;  // positive is "higher than objective"
+	    ret = allNeg ? -1 : ret;
+		return ret;
+	}
+
 
 	public void logInputs(SurrogateMonth sm, RunRecord rec, ArrayList<double[][]> inputs, 
 			boolean fail, String context, String comment) {
@@ -285,9 +362,10 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	public float annEC(ArrayList<double[][]> monthly, int location, int variable, int ave_type, int month, int year) {
 		// TODO: Why is there a variable argument. Isn't this just for linegen?
 		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
-		int cyclePlaceholder = 0; // TODO use actual cycle unless that is a bad idea
-		double sac0 = 0.;         // TODO this seems to cripple any storage
-		double exp0 = 0.;
+		// TODO use actual cycle unless that is a bad idea
+		int cyclePlaceholder = 0; 
+		double sac0 = monthly.get(1)[0][0];         
+		double exp0 = monthly.get(2)[0][0];
 		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, 0, 0, year, month, cyclePlaceholder,
 				ave_type);
 		this.logInputs(sm, rec, monthly, false, "annEC",null);
