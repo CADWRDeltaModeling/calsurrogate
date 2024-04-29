@@ -29,8 +29,8 @@ class SurrogateIdentifier {
 
 	
 	public SurrogateIdentifier(int location, int aveType) {
-		location = location;
-		aveType = aveType;
+		this.location = location;
+		this.aveType = aveType;
 	}
 
 	@Override
@@ -47,7 +47,7 @@ class SurrogateIdentifier {
 		if (getClass() != obj.getClass())
 			return false;
 		SurrogateIdentifier other = (SurrogateIdentifier) obj;
-		return Objects.equals(aveType, other.aveType) && Objects.equals(location, other.location);
+		return location.equals(other.location) && aveType.equals(other.aveType);
 	}
 
 }
@@ -78,6 +78,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	public final int CLL_CALSIM = 5; // Collinsville
 	public final int MAL_CALSIM = 6; // Mallard is Chipps
 	public final int BDL_CALSIM = 20; // Beldons Landing
+	public final int X2_CALSIM =  30; // X2
 	
 
 	// Only Monthly mean and maximum of 14-day running ave are implemented
@@ -164,9 +165,23 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	 */
 	public SurrogateMonth getSurrogateForSite(int location, int aveType) {
 		SurrogateIdentifier hasher = new SurrogateIdentifier(location, aveType);
+		if (! this.surrogateForLoc.containsKey(hasher)) {
+			throw new IllegalArgumentException("No surrogate registered for location code "+location+" ave type "+aveType);
+		}
 		return surrogateForLoc.get(hasher);
 	}
 	
+	/**
+	 * Get surrogate for location
+	 * @param location (is this the CalSim code??)
+	 * @param aveType average type (is this the calsim code?) //TODO document this 
+	 * @return
+	 */
+	public boolean hasSurrogateForSite(int location, int aveType) {
+		SurrogateIdentifier hasher = new SurrogateIdentifier(location, aveType);
+		return surrogateForLoc.containsKey(hasher);
+	}
+
 	
 
 	
@@ -207,7 +222,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 				ave_type);
 		
 		GridResult gr;
-		double loBound0=4000; double hiBound0=22000;
+		double loBound0=4000; double hiBound0=22000; // Todo: coordinate
 		double loBound1=800.; double hiBound1=12800;
 		if (this.cachedGridResult.containsKey(rec)) {
 			gr = cachedGridResult.get(rec);
@@ -230,11 +245,11 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 				System.out.println("Year "+year+ " Month "+ month + " sometimes feasible ==============");
 			}
 		}
-		if (feasible < 0) { // return trivial values to indicate sac - exp > 0.
-			double[] alwaysFeasibleConstraint = {1.,-1., 0.};
+		if (feasible < 0) { // return trivial values to indicate sac - exp > 0. using an < constraint
+			double[] alwaysFeasibleConstraint = {0.,-1.,1.};
 			return alwaysFeasibleConstraint[variable];
-		} else if(feasible > 0) { // return reasonable behavior for infeasible case
-			double[] neverFeasibleConstraint = {1.,-1.,hiBound0-loBound1};
+		} else if(feasible > 0) { // return reasonable behavior for infeasible case sac - ex > X using a < constraint
+			double[] neverFeasibleConstraint = {-(hiBound0-loBound1),-1.,1.,};
 			return neverFeasibleConstraint[variable]; // TODO Move this to magic? 
 		}
 
@@ -279,7 +294,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		boolean allPos = true;
 		for (int i=0; i< nx0; i++) {
 			for (int j=0; j<nx1; j++) {
-				// System.out.println("assessFeasible WQ target="+targetWQ+ " " + gr.getResult()[i][j][siteNdx]);
+				double sac = gr.getGridInput0()[i];
 				
 				double est = gr.getResult()[i][j][siteNdx];
 			    if (est > targetWQ) { allNeg=false;}
@@ -358,16 +373,21 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		return sb.toString();
 	}	
 
+	public float annEC(ArrayList<double[][]> monthly, int location, int ave_type, int month, int year) {	
+	    //for average types that don't have an additional parameter
+		return annEC(monthly,location,ave_type,0.,month,year);
+	}
+	
+	public float annEC(ArrayList<double[][]> monthly, int location, int ave_type, double ave_thresh, int month, int year) {
 
-	public float annEC(ArrayList<double[][]> monthly, int location, int variable, int ave_type, int month, int year) {
-		// TODO: Why is there a variable argument. Isn't this just for linegen?
 		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
 		// TODO use actual cycle unless that is a bad idea
 		int cyclePlaceholder = 0; 
 		double sac0 = monthly.get(1)[0][0];         
 		double exp0 = monthly.get(2)[0][0];
-		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, 0, 0, year, month, cyclePlaceholder,
-				ave_type);
+		int param_lookup = (int) ave_thresh;
+		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, 0, param_lookup, 
+				year, month, cyclePlaceholder,ave_type);
 		this.logInputs(sm, rec, monthly, false, "annEC",null);
 		// index within the surrogate output of the site of interest
         int locIndex = this.getIndexForSite(location); //TODO this got hardwired to zero early on, is it fixed?
@@ -375,11 +395,8 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		if (cachedSurrogate.containsKey(rec)) {
 			double[][] cached = cachedSurrogate.get(rec);
 			return (float) cached[0][locIndex]; // cachedSurrogate(rec,location); // TODO add index for variable
-		} else if (cachedGradient.containsKey(rec)) {
-			double[][] cached = cachedGradient.get(rec);
-			cachedSurrogate.put(rec, cached);
-			return (float) cached[0][locIndex];    // TODO: lacks index for location
 		} else {
+			sm.getAgg().setThreshold(ave_thresh);
 			double[][] eval = sm.annMonth(monthly, year, month);
 			((HashMap<RunRecord, double[][]>) cachedSurrogate).put(rec, eval);
 			return (float) eval[0][locIndex];     // TODO lacks index for variable
@@ -392,8 +409,8 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	 * Currently there is no attempt at caching here. 
 	 * @param target EC Target
 	 * @param monthlyInputs Monthly inputs. Current period Sac can be junk -- it is not used
-	 * @param sacLoBound Lower bound for search
-	 * @param sacHiBound Upper bound for search
+	 * @param flowLoBound Lower bound for search
+	 * @param flowHiBound Upper bound for search
 	 * @param location Location where target is to be met
 	 * @param ave_type averaging used
 	 * @param month calendar month
@@ -401,30 +418,70 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	 * @returns Required flow. If required flow is above sacHiBound, returns a number above sacHiBound. 
 	 * If required flow is below sacLoBound, returns a number below sacLoBound. Currently +/- 999999.
 	 */
-	public float requiredSac(double target, ArrayList<double[][]> monthlyInputs, 
-			double sacLoBound, double sacHiBound, int location,
+	public float requiredFlow(double target, ArrayList<double[][]> monthlyInputs, 
+			double flowLoBound, double flowHiBound, int location,
 			int ave_type, int month, int year) {
-		SurrogateMonth sm = getSurrogateForSite(location,ave_type);
-		InverseSurrogateMonth ism = new InverseSurrogateMonth(sm);
-		int hardwiredLoc = 0;
-		int sacIndex=0;
-		double req = ism.invert(target, monthlyInputs, sacIndex, sacLoBound, sacHiBound, 
-				          year, month, hardwiredLoc);
+ 		
+		//TODO Check if ave_type requires criterion. 
+		//SurrogateMonth sm = getSurrogateForSite(location,ave_type);
 
-		if (req > sacHiBound) {
+		return requiredFlow(target, monthlyInputs,
+				   flowLoBound, flowHiBound, location, ave_type, month, year, 0.);
+	}
+
+	
+
+	
+	/**
+	 * Given historical input, location find the required Sacramento flow to meet 
+	 * a salinity or EC Target if such a value lies between sacLoBound and sacHiBound.
+	 * Currently there is no attempt at caching here. 
+	 * @param target EC Target
+	 * @param monthlyInputs Monthly inputs. Current period Sac can be junk -- it is not used
+	 * @param flowLoBound Lower bound for search
+	 * @param flowHiBound Upper bound for search
+	 * @param location Location where target is to be met
+	 * @param ave_type averaging used
+	 * @param month calendar month
+	 * @param year calendar year
+	 * @returns Required flow. If required flow is above sacHiBound, returns a number above sacHiBound. 
+	 * If required flow is below sacLoBound, returns a number below sacLoBound. Currently +/- 999999.
+	 */
+	public float requiredFlow(double target, ArrayList<double[][]> monthlyInputs, 
+			double flowLoBound, double flowHiBound, int location,
+			int ave_type, int month, int year, double nth) {
+		
+        //if (location != this.X2_CALSIM)) {
+        //	throw new IllegalArgumentException("")
+        //}
+      
+		SurrogateMonth sm = getSurrogateForSite(location,ave_type);
+		if (ave_type == AggregateMonths.NTH_SMALLEST.calsimCode) {
+			sm.getAgg().setN((int) nth);
+			System.out.println("requiredFlow data dump");
+		    DataDumper dumper = new DataDumper();
+		    dumper.dumpInputs(monthlyInputs);
+		}
+	
+		
+		InverseSurrogateMonth ism = new InverseSurrogateMonth(sm);
+		int flowIndex=0;
+		// TODO location was hardwired and code isn't checked for cases where flowIndex != 0
+		double req = ism.invert(target, monthlyInputs, flowIndex, flowLoBound, flowHiBound, 
+				          year, month, location);
+
+		if (req > flowHiBound) {
 			// Salinity target was not feasible
 			req =  999999.;
 		}
-		if (req< sacLoBound) {
+		if (req< flowLoBound) {
 			req = -999999.;
 		}
 		return (float) req;
-	}
+	}	
 	
 	
 //TODO: there are a lot of "placeholderCycles that need to be replaced
 // Need to make sure that the output location stuff is OK. surrogateForSite seems fine, but is the indexing used too?
-	
-	
 }
 

@@ -18,34 +18,55 @@ public class SurrogateMonth {
 	}
 
 	private Surrogate daily;
-    private int[] exogInputsNdx = {5};  // TODO: hardwired logic
+    private int[] exogInputsNdx;  // TODO: hardwired logic
     private DisaggregateMonths firstNonNullDisagg; // non-null used for length calculations
 
-    
+    /**
+     * Constructor that leaves exogInputsNdx open. This is preferred as we vary the architectures
+     * @param disagg
+     * @param daily
+     * @param agg
+     * @param exogInputsNdx
+     */
+    public SurrogateMonth(DisaggregateMonths[] disagg, 
+    		Surrogate daily, 
+    		AggregateMonths agg,
+    		int[] exogInputsNdx) {
+
+    	boolean allNull = true;
+
+    	for (DisaggregateMonths d : disagg) {
+    		if (d != null) {
+    			allNull = false;
+    			firstNonNullDisagg = d;
+    		}
+    	}
+    	if (allNull) {
+    		throw new NullPointerException(
+    				"Not all disaggregators can be null. If using all exogenous data, use a dummy disaaggregator for one member");
+    	}
+
+    	this.disagg = disagg;
+    	this.daily = daily;
+    	this.agg = agg;
+    	this.exogInputsNdx = exogInputsNdx;
+
+    }
 
     
-    
+    /**
+     * this hardwires the exogenous column to input index 5 (usual spots for tgetides in legacy ANNs)
+     * @param disagg
+     * @param daily
+     * @param agg
+     */
 	public SurrogateMonth(DisaggregateMonths[] disagg, 
 			              Surrogate daily, 
 			              AggregateMonths agg) {
-
-		boolean allNull = true;
-		
-		for (DisaggregateMonths d : disagg) {
-			if (d != null) {
-				allNull = false;
-				firstNonNullDisagg = d;
-			}
-		}
-		if (allNull) {
-			throw new NullPointerException(
-			"Not all disaggregators can be null. If using all exogenous data, use a dummy disaaggregator for one member");
-		}
-
-		this.disagg = disagg;
-		this.daily = daily;
-		this.agg = agg;
-		
+		// for legacy reasons, {5} is the usual tide index, which is exogenous
+ 		this(disagg,daily,agg,null);
+ 	    int[] exogNdx = {5};
+ 		this.exogInputsNdx = exogNdx;
 	}
 
 	public int bufferNDay(int year, int month) {
@@ -166,6 +187,15 @@ public class SurrogateMonth {
 		int nbatch = monthlyInputs.get(0).length;
 		int nday = this.disagg[0].getNDay(year, month); 
 
+        if(monthlyInputs.size() == 3) {
+		  DataDumper dumper = new DataDumper();
+		  System.out.println("Dumpling Monthly " + year + " " + month);
+		  dumper.dumpInputs(monthlyInputs);
+		  //System.out.println("Dumping Daily " + year + " " + month);
+		  //dumper.dumpInputs(dailyInputs);
+		  //System.out.println("Done");
+        }		
+		
 		// Disaggregate monthly to daily for each feature/input. monthly comes in
 		// reversed
 		// but will be put forward in time
@@ -183,6 +213,7 @@ public class SurrogateMonth {
 
 		int indexStart = disagg[0].offsetFirstMonth(year, month);
 
+		
 		// Slide window on the daily inputs and generate daily output
 		// The indexes in the ArrayList represent stations or output locations
 		// The first index of the double[][] represent the original input batches
@@ -199,6 +230,7 @@ public class SurrogateMonth {
 				monthlyOut[ibatch][iLoc] = agg.aggregate(dailyOutputs.get(iLoc)[ibatch], indexStart, 1, daysInMonth);
 			}
 		}
+		if (monthlyInputs.size()==3) {System.out.println("ANN month returning: "+monthlyOut[0][0]);}
 		return monthlyOut;
 	}
 

@@ -22,7 +22,28 @@ class AggregateMonthsTest {
 		AggregateMonths mmax14 = AggregateMonths.MONTHLY_MAX_14D_TRUNCATED;
 		System.out.println(mmax14.aggregate(data, 85, 1, 20));
         
+		AggregateMonths nth = AggregateMonths.NTH_SMALLEST;
+		nth.setN(5);
+		System.out.println(nth.aggregate(data,0,1,31));
+		
+		AggregateMonths count = AggregateMonths.COUNTBELOW;
+		count.setThreshold(7.);
+		
+		System.out.println(count.aggregate(data, 0, 1, 31));
+		
+		double[] data2 = { 62.,66.,72.,85.,91.,90.,88.,84.,86.,91.};
+        
+		count.setThreshold(86.);
+		System.out.println(count.aggregate(data2, 0, 1, 10 )); // 6
+		
+		// ordered: 62, 66, 72, 84, *85*, 86, 88, 90, 91, 91 
+		System.out.println(nth.aggregate(data2, 0, 1, 10)); // 85
+		
+		System.out.println("**");
 		System.out.println(mmax14.calsimCode);
+
+		
+		
 		
 		for (AggregateMonths agg : AggregateMonths.values()) {
 		    System.out.println(agg.calsimCode);

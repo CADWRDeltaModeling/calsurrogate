@@ -41,8 +41,37 @@ class SalinitySurrogateManagerTest {
 		RunRecord rec = new RunRecord(mock, sac[0][0],exp[0][0],0,0,year,month,cycle,monthly);
 		ssm.logInputs(annMonth, rec, floatInput, false,"","");
 		
-		
 	}
+	
+	
+	@Test
+	void testSurrogateForSite() {
+		SalinitySurrogateManager ssm = SalinitySurrogateManager.INSTANCE;
+		int nDayHist = 118;
+		Surrogate mock = new MockSurrogate(nDayHist);
+		//int nMonthHist = 5;
+		DisaggregateMonths spline = new DisaggregateMonthsSpline(5);
+		DisaggregateMonths repeat = new DisaggregateMonthsRepeat(5);
+		//DisaggregateMonths daysOps = new DisaggregateMonthsDaysToOps(5, 1., 0.);
+		DisaggregateMonths[] disagg = { spline, spline, repeat, repeat, repeat };
+		AggregateMonths agg = AggregateMonths.MONTHLY_MEAN;
+		SurrogateMonth annMonth00 = new SurrogateMonth(disagg, mock, agg);
+		SurrogateMonth annMonth01 = new SurrogateMonth(disagg, mock, agg);
+		SurrogateMonth annMonth10 = new SurrogateMonth(disagg, mock, agg);
+		SurrogateMonth annMonth11 = new SurrogateMonth(disagg, mock, agg);
+        ssm.setSurrogateForSite(0, 0, annMonth00);
+        ssm.setSurrogateForSite(0, 1, annMonth01);
+        ssm.setSurrogateForSite(1, 0, annMonth10);
+        ssm.setSurrogateForSite(1, 1, annMonth11);
+        assertTrue(ssm.hasSurrogateForSite(1, 0));
+        assertTrue(!ssm.hasSurrogateForSite(2, 0));
+		assertTrue(ssm.getSurrogateForSite(0, 0) != annMonth11);        
+		assertTrue(ssm.getSurrogateForSite(0, 0) == annMonth00);   //must be == not equals()
+		assertTrue(ssm.getSurrogateForSite(0, 1) == annMonth01);
+		assertTrue(ssm.getSurrogateForSite(1, 0) == annMonth10);
+		assertTrue(ssm.getSurrogateForSite(1, 1) == annMonth11);
+
+	}	
 	
 	/*
 	@Test

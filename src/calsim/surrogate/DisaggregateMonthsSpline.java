@@ -16,7 +16,7 @@ public class DisaggregateMonthsSpline extends DisaggregateMonths {
 	 */
 	public double[] apply(int year, int month, double[] dataRev) {
 		double[][] ts = asIrregArray(year, month, dataRev);
-		double pqScalar = 2;
+		double pqScalar = 10;
 		double[] pq = { pqScalar, pqScalar, pqScalar, pqScalar, pqScalar, pqScalar }; // TODO
 		double y0 = ts[1][0];
 		double yn = ts[1][this.getNMonth()];

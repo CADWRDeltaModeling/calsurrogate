@@ -42,7 +42,7 @@ class SurrogateLineSearcher extends BrentSolver{
 	@Override
 	public double eval(double[] x) {
 		this.inputs.get(0)[0][0]=x[0];
-		this.inputs.get(0)[0][1]=x[1];
+		this.inputs.get(1)[0][0]=x[1];
         double[][] output = surrogate.annMonth(this.inputs, this.year, this.month);
         return output[0][0] - target;
 	}	
