@@ -1,7 +1,7 @@
 package calsim.surrogate;
 
 /**
- * Disaggregation that repeats the monthly value through the month
+ * DisaggregationMonths that repeats the monthly value through the month
  */
 public class DisaggregateMonthsRepeat extends DisaggregateMonths {
 

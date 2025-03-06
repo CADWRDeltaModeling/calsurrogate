@@ -1,8 +1,8 @@
 package calsim.surrogate;
 
 /**
- * Monthly to daily disaggregation using a conservative spline (rationional
- * histospline) //TODO the spline paramter pq is kind of buroed.
+ * Monthly to daily disaggregation using a conservative spline (rational
+ * histospline) //TODO the spline paramter pq is kind of burrowed.
  */
 public class DisaggregateMonthsSpline extends DisaggregateMonths {
 
@@ -11,8 +11,17 @@ public class DisaggregateMonthsSpline extends DisaggregateMonths {
 	}
 
 	/**
-	 * Disaggregate monthly data looking back in time If that is a bad direction we
-	 * can fix it.
+	 * Disaggregates monthly data into a daily time series using a conservative spline
+	 *
+	 * <p><strong>Note:</strong> The input array {@code dataRev} is expected to be in reverse 
+	 * chronological order (with the current month at index 0). Internally, the method calls 
+	 * {@link #asIrregArray(int, int, double[])} to reverse the order into a forward chronological 
+	 * series before performing the disaggregation.</p>
+	 *
+	 * @param year    the current year
+	 * @param month   the current month (January = 1)
+	 * @param dataRev an array of monthly data in reverse chronological order
+	 * @return a daily time series derived from the monthly data
 	 */
 	public double[] apply(int year, int month, double[] dataRev) {
 		double[][] ts = asIrregArray(year, month, dataRev);

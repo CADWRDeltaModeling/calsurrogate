@@ -13,6 +13,8 @@ class PracticalTest {
 	@Test
 	void test() {
 		String fname = "./ann_calsim-main/rock_slough";
+		
+		
 		SurrogateMonth annMonth = createSurrogateMonth(fname); //new SurrogateMonth(disagg, mock, agg);
 
 		double[][] sac = { { 14765.289427181004,13478.35135024262,36344.084703109846,49641.401116570276,21677.466640999544 } };

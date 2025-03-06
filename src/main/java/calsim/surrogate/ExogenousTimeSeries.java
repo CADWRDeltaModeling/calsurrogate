@@ -49,15 +49,15 @@ public class ExogenousTimeSeries {
 		System.arraycopy(this.data[colIndex], (int) offset, slice, 0, nday);
 		return slice;
 	}
-	
+
 	boolean skipLine(String line) {
 		if (line.startsWith("#") || (line.indexOf("#")==1)) {
 			// Should be startsWith but that failed
 			return true;
 		}
-		
+
 		if (line.toLowerCase().startsWith("date") || (line.toLowerCase().indexOf("date") ==1 ) || 
-			(line.indexOf(",")==1) || line.startsWith(",") )  {
+				(line.indexOf(",")==1) || line.startsWith(",") )  {
 			// Simple Header
 			return true;
 		}
@@ -91,7 +91,7 @@ public class ExogenousTimeSeries {
 					}
 				}
 				nrow ++;
-				
+
 			}
 			//br.close();
 		}catch (IOException ioe) {
@@ -103,7 +103,7 @@ public class ExogenousTimeSeries {
 		return info;
 	}
 
-	
+
 	private void loadData(String csv) {
 
 		try {
@@ -112,16 +112,16 @@ public class ExogenousTimeSeries {
 			ClassLoader loader = this.getClass().getClassLoader();
 			InputStream stream = loader.getResourceAsStream(csv);
 			CSVFileInfo info = this.fileInfo(stream);
-			
+
 			this.startDate = info.startDate;
 			data = new double[info.nCol][info.nLine];
-		    
+
 			// reposition at beginning of file
 			// TODO better way?
 			stream = loader.getResourceAsStream(csv);
 			BufferedReader br = new BufferedReader(new InputStreamReader(stream));
-            
-			
+
+
 			String line = "";
 			String[] tempArr;
 			int iRow = 0;
@@ -132,10 +132,10 @@ public class ExogenousTimeSeries {
 				tempArr = line.split(delimiter);
 				if (tempArr.length == 0) continue;
 				//System.out.println(line);
-                for (int jCol = 0; jCol < info.nCol; jCol++) {
-                	this.data[jCol][iRow] = Double.valueOf(tempArr[1+jCol]);
-                }
-                iRow++;
+				for (int jCol = 0; jCol < info.nCol; jCol++) {
+					this.data[jCol][iRow] = Double.valueOf(tempArr[1+jCol]);
+				}
+				iRow++;
 			}
 			br.close();
 		} catch (IOException ioe) {

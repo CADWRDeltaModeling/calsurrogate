@@ -6,20 +6,24 @@ import java.util.Arrays;
 import java.util.Random;
 
 /**
- * Abstract class for the step converting monthly averages to a daily history.
- * An example implementation is based on ConservativeSpline, a rational
- * histospline from Splath that is also implemented in vtools for python.
- * 
- * The CalSIM use of the spline has two issues. First, ConservativeSpline was
- * used for consistency with DSM2, but the DSM2 use is always used on the full
- * series whereas the situation in CalSIM is usually one sided, meaning that we
- * know the past and have a guess at the present but don't know the future. So
- * the sought-after consistency isn't going to be achieved (or even close).
- * Second, the use for both DSM2 and CalSIM uses a very high penalty which means
- * that the usefulness of the spline for being more accurate is severely tapped
- * down and it really just rounds some corners and still has a stairstep look
- * This means that relative to an accurate spline the stairstepping will produce
- * sawtooth residuals of a period of one month.
+ * Abstract class for disaggregating reverse-chronologically ordered monthly data
+ * into a daily time series.
+ *
+ * <p>CalSim exports monthly data in reverse chronological order where the current month
+ * is at index 0 and older months follow. This class provides the framework for converting
+ * that reverse-ordered data into a forward-in-time daily series. The helper method 
+ * {@link #asIrregArray(int, int, double[])} is used to transform the input into a time series
+ * with correct calendar month boundaries.</p>
+ *
+ * <p>Subclasses implement different strategies for disaggregation:
+ * <ul>
+ *   <li>{@link DisaggregateMonthsDaysToOps}: Disaggregates by assigning specific operational 
+ *       values for parts of the month.</li>
+ *   <li>{@link DisaggregateMonthsRepeat}: Repeats the monthly value across all days in the month.</li>
+ *   <li>{@link DisaggregateMonthsSpline}: Uses a conservative spline (rational histospline) to
+ *       interpolate daily values.</li>
+ * </ul>
+ * </p>
  */
 public abstract class DisaggregateMonths {
 
@@ -39,7 +43,7 @@ public abstract class DisaggregateMonths {
 		return nMonth;
 	}
 
-	// Is this what we want? Is it exact?
+
 	public int offsetFirstMonth(int year, int month) {
 		int[] daysMonth = this.daysMonth(year, month);
 		int cum = 0;
@@ -50,8 +54,17 @@ public abstract class DisaggregateMonths {
 	}
 
 	/**
-	 * Disaggregate monthly data looking back in time If that is a bad direction we
-	 * can fix it.
+	 * Disaggregates monthly data into a daily time series.
+	 *
+	 * <p><strong>Note:</strong> The input array {@code dataRev} is expected to be in reverse 
+	 * chronological order (with the current month at index 0). Internally, the method calls 
+	 * {@link #asIrregArray(int, int, double[])} to reverse the order into a forward chronological 
+	 * series before performing the disaggregation.</p>
+	 *
+	 * @param year    the current year
+	 * @param month   the current month (January = 1)
+	 * @param dataRev an array of monthly data in reverse chronological order
+	 * @return a forward daily time series derived from the monthly data
 	 */
 	public abstract double[] apply(int year, int month, double[] dataRev);
 
@@ -86,17 +99,20 @@ public abstract class DisaggregateMonths {
 	}
 
 	/**
-	 * Returns a time series indexed in units of days where each time index is the
-	 * start (Jan 1 0:00) of a month. An entry is appended representing the start
-	 * of the next (month+1) month. The data
-	 * 
-	 * @param year
-	 * @param month
-	 * @param dataRev data to populate array starting with index 0 for month in call
-	 *                and looking back
-	 * @return irreg[][] where the entries in irreg[0][:] are the times and irreg[1]
-	 *         are the data. The last entry in irreg[1][:] is not defined, but
-	 *         populated in such a way as to repeat the previous value.
+	 * Constructs an irregular time series represented as a two-dimensional array.
+	 *
+	 * <p>The first row (ts[0]) contains cumulative day boundaries marking the start of each month,
+	 * with an extra entry for the start of the following month. The second row (ts[1]) contains
+	 * the monthly data values in forward chronological order.</p>
+	 *
+	 * <p><strong>Note:</strong> The input array {@code dataRev} must be provided in reverse 
+	 * chronological order (i.e., index 0 is the current month). This method reverses the order to 
+	 * produce a forward time series that aligns with calendar month boundaries.</p>
+	 *
+	 * @param year    the current year
+	 * @param month   the current month (January = 1)
+	 * @param dataRev an array of monthly data in reverse chronological order
+	 * @return a two-dimensional array where ts[0] holds day boundaries and ts[1] holds the data values
 	 */
 	public double[][] asIrregArray(int year, int month, double[] dataRev) {
 		double[][] ts = new double[2][nMonth + 1];

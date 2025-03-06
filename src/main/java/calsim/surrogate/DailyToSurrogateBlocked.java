@@ -1,9 +1,29 @@
 package calsim.surrogate;
 
+
+
 /**
- * Implementation of DailyToSurrogate that converts daily flow history into
- * aggregation common for CalSIM ANNs, which is 8 single days and 10 11-day
- * averages looking back in time.
+ * Implementation of {@link DailyToSurrogate} that produces the traditional CalSim ANN input 
+ * for MLPs.
+ *
+ * <p>This implementation packages the daily data as follows:
+ * <ul>
+ *   <li><strong>Individual Days:</strong> The first portion of the output consists of a specified 
+ *       number of individual daily values taken in reverse chronological order (i.e., current day, 
+ *       then yesterday, etc.).</li>
+ *   <li><strong>Block Averages:</strong> Following the individual daily values, the remaining 
+ *       portion of the output contains block averages. Each block is computed by averaging a fixed 
+ *       number of days (the block length) from a further back portion of the history. The blocks 
+ *       are also considered in reverse chronological order (the earliest days in the block are 
+ *       averaged first, but the resulting average is positioned so that later (more recent) blocks 
+ *       appear first in the output).</li>
+ * </ul>
+ * </p>
+ *
+ * <p>For example, a typical configuration might use 7 individual daily values and 10 blocks, each 
+ * representing an 11-day average. In this case, the output vector will have a total length of 
+ * 7 + 10 = 17, where indices 0 to 6 represent the individual days (current day at index 0) and 
+ * indices 7 to 16 represent the block averages.</p>
  */
 public class DailyToSurrogateBlocked implements DailyToSurrogate {
 
