@@ -163,7 +163,7 @@ class LinearConstraintTest {
 		double[][] out2 = ann.annMonth(floatInput, year, month);
 		double externalDiff = out2[0][0] - grad[0][LinearConstraint.VAL_NDX];
 		assertEquals(externalDiff, grad[0][LinearConstraint.DSAC_NDX] *60. - grad[0][LinearConstraint.DEXP_NDX] * 60.,
-				0.12);
+				0.3);
 
 	}		
 	

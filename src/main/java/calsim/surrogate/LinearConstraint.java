@@ -15,68 +15,79 @@ public class LinearConstraint {
 	SurrogateMonth annMonth;
 
 	/**
-	 * 
-	 * @param monthlyInputs Monthly values, with locations as the ArrayList members
-	 *                      and the other dims are batch and time lags in that order
-	 * @param year          analyzed
-	 * @param month         analyzed
-	 * @return 2D array with the first dimension being output locations and second
-	 *         dimension being the value returned whcih is 0 for value, 1 as
-	 *         derivative w.r.t. Sac (or first input) and 2 for derivative w.r.t.
-	 *         exports (or second input)
+	 * Computes the gradient (finite difference approximation) of the surrogate output with respect to
+	 * Sacramento and Export flows.
+	 *
+	 * <p>The function builds five perturbed cases per input location (each corresponding to a
+	 * particular perturbation scenario):
+	 * <ul>
+	 *   <li>Index 0: Unperturbed (nominal) value.
+	 *   <li>Index 1: Sacramento flow perturbed by -1.
+	 *   <li>Index 2: Sacramento flow perturbed by +1.
+	 *   <li>Index 3: Export flow perturbed by -1.
+	 *   <li>Index 4: Export flow perturbed by +1.
+	 * </ul>
+	 * The gradient is then computed using central differences.
+	 *
+	 * @param monthlyInputs List of input arrays (one per location) where each array has dimensions
+	 *                      [batch size][time lag]. The current time period is at index 0.
+	 * @param year  The calendar year being analyzed.
+	 * @param month The calendar month being analyzed.
+	 * @return A 2D array where each row corresponds to an output location. The columns are:
+	 *         <ul>
+	 *           <li>Index 0: Nominal surrogate value (S₀).
+	 *           <li>Index 1: Finite difference derivative with respect to Sac flow.
+	 *           <li>Index 2: Finite difference derivative with respect to Export flow.
+	 *         </ul>
 	 */
 	public double[][] gradient(ArrayList<double[][]> monthlyInputs, int year, int month) {
+	    final int NPERTCASE = 5;  // Total perturbed cases: [0]=nominal, [1-2]=Sac, [3-4]=Exports
+	    final double[] perturb = { -1.0, 1.0 };  // Offsets for finite difference estimation
+	    int nLoc = monthlyInputs.size();
+	    int nTime = monthlyInputs.get(0)[0].length;
 
-		// centered estimate first then sac and exports negative and positive in that
-		// order
-		final int NPERTCASE = 5;
-		final double[] perturb = { -1.0, 1.0 };
-		int nLoc = monthlyInputs.size();
-		// nBatch = monthlyInputs.get(0).length; //TODO this should be checked to be one
-		// until handled
-		int nTime = monthlyInputs.get(0)[0].length;
+	    // Build a list of perturbed inputs (one per location)
+	    ArrayList<double[][]> perturbedInputs = new ArrayList<>();
+	    for (int iLoc = 0; iLoc < nLoc; iLoc++) {
+	        double[][] perturbedData = new double[NPERTCASE][nTime];
+	        double[][] src = monthlyInputs.get(iLoc);
+	        // Copy the nominal (unperturbed) values into all cases
+	        for (int iPert = 0; iPert < NPERTCASE; iPert++) {
+	            System.arraycopy(src[0], 0, perturbedData[iPert], 0, nTime);
+	        }
+	        perturbedInputs.add(perturbedData);
+	    }
 
-		ArrayList<double[][]> perturbedInputs = new ArrayList<double[][]>();
+	    // Apply finite difference perturbations for Sacramento and Export flows.
+	    // Note: Hardwired that iLoc==0 is Sac and iLoc==1 is Exports.
+	    int iPert = 0;  // Start with unperturbed case at index 0.
+	    for (int iLoc = 0; iLoc < 2; iLoc++) {
+	        for (int ip = 0; ip < perturb.length; ip++) {
+	            iPert += 1;
+	            // For current location (Sac or Exports), modify the current time period value.
+	            perturbedInputs.get(iLoc)[iPert][0] += perturb[ip];
+	        }
+	    }
 
-		// Initialize everything to be the same as input monthly values
-		for (int iLoc = 0; iLoc < nLoc; iLoc++) {
-			double[][] perturbedData = new double[NPERTCASE][nTime];
-			double[][] src = monthlyInputs.get(iLoc);
-			for (int iPert = 0; iPert < NPERTCASE; iPert++) {
-				System.arraycopy(src[0], 0, perturbedData[iPert], 0, nTime);
-			}
-			perturbedInputs.add(perturbedData);
-		}
+	    // Evaluate the surrogate for all perturbed cases.
+	    double[][] monthOut = annMonth.annMonth(perturbedInputs, year, month);
 
-		// Now perturb Sac and Exports
-		int iPert = 0;  // iPert = 0 is unperturbed
-		for (int iLoc = 0; iLoc < 2; iLoc++) { // TODO HARDWIRED sac and exp location in array
-			for (int ip = 0; ip < perturb.length; ip++) {
-				iPert += 1;
-				// iLoc = 0 is Sac, iLoc = 1 is Exports
-				// iPert is the perturbation case and the final 0 is the current time period
-				perturbedInputs.get(iLoc)[iPert][0] = perturbedInputs.get(iLoc)[iPert][0] + perturb[ip];
-			}
-		}
+	    // Compute the gradients using central differences.
+	    int nOut = monthOut[0].length;
+	    double[][] ddQAll = new double[nOut][3];
+	    double dQ = perturb[1] - perturb[0];  // Expected to be 2.0
 
-		// monthOut has dimensions of batch size (5) by number of stations predicted by
-		// ANN
-		double[][] monthOut = annMonth.annMonth(perturbedInputs, year, month);
-
-		// Derivative of each output location with respect to Sac and Exp
-		// TODO it would be nice to query this
-		int nOut = monthOut[0].length;
-		double[][] ddQAll = new double[nOut][3];
-		double dQ = perturb[1] - perturb[0];
-
-		for (int iOut = 0; iOut < nOut; iOut++) {
-			ddQAll[iOut][0] = monthOut[0][iOut];
-			double dEC = monthOut[2][iOut] - monthOut[1][iOut];
-			ddQAll[iOut][1] = dEC / (dQ); // derivative of location iLoc EC w.r.t. Sac flow
-			dEC = monthOut[4][iOut] - monthOut[3][iOut];
-			ddQAll[iOut][2] = dEC / (dQ); // derivative of location iloc EC w.r.t. Exports
-		}
-		return ddQAll;
+	    for (int iOut = 0; iOut < nOut; iOut++) {
+	        // Nominal output value
+	        ddQAll[iOut][0] = monthOut[0][iOut];
+	        // Derivative with respect to Sac: difference between positive and negative perturbation results
+	        double dEC = monthOut[2][iOut] - monthOut[1][iOut];
+	        ddQAll[iOut][1] = dEC / dQ;
+	        // Derivative with respect to Exports
+	        dEC = monthOut[4][iOut] - monthOut[3][iOut];
+	        ddQAll[iOut][2] = dEC / dQ;
+	    }
+	    return ddQAll;
 	}
 
 	/**

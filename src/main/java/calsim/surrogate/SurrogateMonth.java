@@ -74,23 +74,54 @@ public class SurrogateMonth {
 	}
 
 	/**
-	 * 
-	 * @param ivar Index in surrogate of the input
-	 * @param arr array to be filled. On entry first dimension will be nBatch 
-	 *        and second is ignored. On exit dim should be nBatch x nDay
+	 * Loads exogenous daily input data for the specified variable into a batch of arrays.
+	 *
+	 * <p>This method extracts a daily slice of exogenous data from the singleton instance of
+	 * {@link ExogenousTimeSeries} for the variable corresponding to {@code ivar}. Instead of always
+	 * using the current month as the starting point, the method calculates the start date based on the
+	 * multi-month history length specified by the first non-null disaggregator. For instance, if the history
+	 * spans 5 months and the current month is May 2025, the exogenous data will be fetched starting from
+	 * January 1, 2025. The total length of the data fetched is {@code nDay}, which should match the
+	 * length of the disaggregated daily history.</p>
+	 *
+	 * <p>The fetched exogenous slice is then copied identically across all batch members, ensuring that the
+	 * unnamed source of variation is handled correctly.</p>
+	 *
+	 * @param arr a two-dimensional array where each sub-array represents a batch of daily exogenous data.
+	 *            On method exit, each sub-array will contain the same daily exogenous data slice.
+	 * @param ivar the index of the surrogate input corresponding to the exogenous variable.
+	 *             This is used to determine the correct column in the exogenous time series.
+	 * @param year the current year (associated with the current month, which is the final month in the history).
+	 * @param month the current month (1-based) which is the last month in the multi-month history.
+	 * @param nDay the total number of days spanning the multi-month history (as computed by the disaggregator).
+	 *
+	 * @see ExogenousTimeSeries#dailyDataSlice(int, int, int, int, int)
+	 * @see #getExogInputIndex(int)
+	 * @see #bufferNDay(int, int)
 	 */
 	public void loadExogenous(double[][] arr, int ivar, int year, int month, int nDay) {
-
-	    int ndx = this.getExogInputIndex(ivar);	
+	    int ndx = this.getExogInputIndex(ivar);
 	    int nBatch = arr.length; // array will end up being nBatch x nDay
-        arr[0] = ExogenousTimeSeries.getInstance().dailyDataSlice(ndx, year, month, 1, nDay);
-		
-		// Then copy to the other members of the batch
-		for (int jbatch = 1; jbatch < nBatch; jbatch++) {
-			arr[jbatch] = new double[bufferNDay(year,month)];
-			System.arraycopy(arr[0], 0, arr[jbatch], 0, arr[0].length);
-		}
+
+	    // Compute the starting year and month based on the multi-month history.
+	    // The current month (year, month) is the final month in the history.
+	    // Thus, the starting month is (current month minus (nMonth - 1)) with day set to 1.
+	    int monthsHistory = firstNonNullDisagg.getNMonth();
+	    java.time.YearMonth startYM = java.time.YearMonth.of(year, month).minusMonths(monthsHistory - 1);
+	    
+	    // Fetch the exogenous daily slice starting at the correct historical beginning.
+	    System.out.println("ndx: " + ndx + " year: " + year + " month "+month + "nDay" + nDay);
+	    System.out.println(startYM);
+	    arr[0] = ExogenousTimeSeries.getInstance()
+	                     .dailyDataSlice(ndx, startYM.getYear(), startYM.getMonthValue(), 1, nDay);
+
+	    // Copy the same exogenous data across all batch entries.
+	    for (int jbatch = 1; jbatch < nBatch; jbatch++) {
+	        arr[jbatch] = new double[arr[0].length];
+	        System.arraycopy(arr[0], 0, arr[jbatch], 0, arr[0].length);
+	    }
 	}
+
 
 	/**
 	 * Takes output for which variation in variable 0 and 1 as a grid has been flattened 
@@ -185,7 +216,7 @@ public class SurrogateMonth {
 		ArrayList<double[][]> dailyInputs = new ArrayList<double[][]>();
 		int nvar = monthlyInputs.size();
 		int nbatch = monthlyInputs.get(0).length;
-		int nday = this.disagg[0].getNDay(year, month); 
+		int nday = this.disagg[0].getNDay(year, month); // Total number of days in history
 
         if(monthlyInputs.size() == 3) {
 		  DataDumper dumper = new DataDumper();
@@ -211,14 +242,15 @@ public class SurrogateMonth {
 			dailyInputs.add(newInput);			
 		}
 
+		// This is the starting datum for the sliding window below
 		int indexStart = disagg[0].offsetFirstMonth(year, month);
 
 		
 		// Slide window on the daily inputs and generate daily output
-		// The indexes in the ArrayList represent stations or output locations
-		// The first index of the double[][] represent the original input batches
+		// The indexes in the output ArrayList represent stations or output locations
+		// The first dimension of the double[][] represent the original input batches
 		// The second index of the double[][], which will be collapsed in the next step,
-		// represent days in the output where indexStart again represents the first of
+		// represent days within the output where indexStart again represents the first of
 		// the month
 		ArrayList<double[][]> dailyOutputs = timeStep(dailyInputs, indexStart, year, month);
 		int nLoc = dailyOutputs.size(); // others are original batch times days in month
@@ -244,13 +276,13 @@ public class SurrogateMonth {
 		int stopIndex = startDayIndex + daysInMonth;
 
 		// The advancing window of days of the month will be handled in TensorFlow
-		// by including each rotated/advanced step as a separate batch index.
+		// by including each  step as a separate batch index.
 		// From this point on the batch size will
-		// be the original batch size times number of days of the month.
+		// be the original batch size (for other reasons) times number of days of the month.
 		// The batches are organized so that the advancing days of the month
 		// within one original batch are contiguous.
 		// There is also time structure in the second index.
-		// This is the point where we transform the a history in days into
+		// This is the point where we transform the daily history into
 		// any other averages or aggregations specific to the the surrogate
 		ArrayList<double[][]> expandedDaily = new ArrayList<double[][]>();
 		int nBigBatch = nbatch * daysInMonth; // The new larger batch size

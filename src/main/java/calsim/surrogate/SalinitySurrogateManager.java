@@ -14,7 +14,7 @@ import java.util.logging.SimpleFormatter;
 class SurrogateIdentifier {
 	Integer location;
 	Integer aveType;     //	See AggregateMonths.calsimCode for integer keys and values
-    /*
+	/*
 	   AVE_TYPE KEY:
 		      1 = monthly average
 		      2 = first day of month value
@@ -25,9 +25,8 @@ class SurrogateIdentifier {
 		      7 = average for first 15 days
 		      8 = average for last 15 days
 		      37 = average for last 7 day
-	*/
+	 */
 
-	
 	public SurrogateIdentifier(int location, int aveType) {
 		this.location = location;
 		this.aveType = aveType;
@@ -67,7 +66,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	/*
 	 * 1 = Jersey Point 2 = Contra Costa - Rock Slough 3 = Emmaton 4 = Antioch 5 =
 	 * Collinsville 6 = Chipps Island 7 = Los Vaqueros Intake 8 = Middle River 9 =
-	 * Victoria Intake 10 = CVP Intake 11 = CCFB 12 = CCFB Intake 20 = Beldan 21 =
+	 * Victoria Intake 10 = CVP Intake 11 = CCFB 12 = CCFB Intake 20 = Beldon 21 =
 	 * Martinez }
 	 */
 	// Only Emmaton in prototype
@@ -77,14 +76,21 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	public final int ANH_CALSIM = 4; // Antioch
 	public final int CLL_CALSIM = 5; // Collinsville
 	public final int MAL_CALSIM = 6; // Mallard is Chipps
+	public final int LVR_CALSIM = 7; // Los Vaqueros Intake
+	public final int MDR_CALSIM = 8; // Middle River Intake
+	public final int CCW_CALSIM = 9; // Victoria River Intake 
+	public final int TRP_CALSIM = 10; // CVP Tracy Intake 
+	public final int CCF_CALSIM = 11;
+	public final int CCI_CALSIM = 12;  
 	public final int BDL_CALSIM = 20; // Beldons Landing
+	public final int MRZ_CALSIM = 21;
 	public final int X2_CALSIM =  30; // X2
-	
+
 
 	// Only Monthly mean and maximum of 14-day running ave are implemented
 	// and for 14-day running ave the actual implementation is truncated as explained
 	// in the aggregateMonth code.
-	
+
 	public final int MONTHLY_AVE = 1; 
 	public final int MAX_14 = 6;
 
@@ -127,25 +133,25 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		}
 	}	
 
-    /**
-     * Set the output index that applies for an encoded location  
-     * @param location the CalSim location that will be sent in
-     * @param index within surrogate output
-     */
+	/**
+	 * Set the output index that applies for an encoded location  
+	 * @param location the CalSim location that will be sent in
+	 * @param index within surrogate output
+	 */
 	public void setIndexForSite(int location, int index) {
 		this.surrogateNdx.put(Integer.valueOf(location), Integer.valueOf(index));
 	}
-	
+
 	/**
 	 * Get the index in the surrogate output that corresponds to a CalSim location code sent in from WRESL
 	 * @param calsimLocation
 	 * @return
 	 */
 	public int getIndexForSite(int calsimLocation) {
-	    //return this.surrogateNdx.get(Integer.valueOf(calsimLocation)).intValue();
-	    return 0;  //TODO hardwire
+		//return this.surrogateNdx.get(Integer.valueOf(calsimLocation)).intValue();
+		return 0;  //TODO hardwire
 	}
-	
+
 	/**
 	 * Set Surrogate for location
 	 * @param location (is this the CalSim code?) //TODO document this
@@ -170,7 +176,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		}
 		return surrogateForLoc.get(hasher);
 	}
-	
+
 	/**
 	 * Get surrogate for location
 	 * @param location (is this the CalSim code??)
@@ -182,27 +188,58 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		return surrogateForLoc.containsKey(hasher);
 	}
 
-	
 
-	
-    /**
-     * 
-     * @param monthlyInput
-     * @param location
-     * @param variable parameter of constraint being requested. See documentation for LinearConstraint
-     * @param ave_type Calsim code corresponding to aggregateMonth
-     * @param month Calendar month of call
-     * @param year  Calendar year of call
-     * @param sac0  Nominal Sacramento R. Flow around which linearization is structured 
-     * @param exp0  Nominal Export around which linearization is structured
-     * @param targetWQ EC objective that informs constraint
-     * @return
-     */
+
+
+	/**
+	 * Generates the linear constraint coefficients for a given location and water quality target.
+	 *
+	 * <p>This method performs the following steps:
+	 * <ol>
+	 *   <li>Retrieves the surrogate model for the given location and averaging type.
+	 *   <li>Constructs a RunRecord for caching purposes. Note the use of several hard-coded values:
+	 *       <ul>
+	 *         <li><b>int0 = 5:</b> Batch size (matching the perturbation cases in finite differences).
+	 *         <li><b>int1 = 0:</b> A placeholder parameter (purpose TBD).
+	 *         <li><b>cyclePlaceholder = 0:</b> Placeholder for simulation cycle.
+	 *       </ul>
+	 *   <li>Evaluates the surrogate model on a coarse grid defined by:
+	 *       <ul>
+	 *         <li>Sacramento flow: lower bound 4000 and upper bound 22000, with 4 grid points.
+	 *         <li>Export flow: lower bound 800 and upper bound 12800, with 3 grid points.
+	 *       </ul>
+	 *       These bounds and grid resolutions are hard-coded and may need calibration.
+	 *   <li>Calls {@code assessFeasible} to determine if the surrogate output is:
+	 *       <ul>
+	 *         <li>Always below the target (feasible): returns -1.
+	 *         <li>Always above the target (infeasible): returns 1.
+	 *         <li>Mixed: returns 0.
+	 *       </ul>
+	 *   <li>If the entire grid is either always feasible or never feasible, returns a trivial constraint:
+	 *       <ul>
+	 *         <li>Always feasible: returns {0, -1, 1}.
+	 *         <li>Never feasible: returns {-(hiBound0 - loBound1), -1, 1} (for the given bounds, this equals {-21200, -1, 1}).
+	 *       </ul>
+	 *   <li>Otherwise, computes (or retrieves from cache) the gradient via finite differences and then
+	 *       calls {@code formulateConstraint} to generate the linear constraint coefficients.
+	 * </ol>
+	 *
+	 * @param monthlyInput List of monthly input arrays.
+	 * @param location     CalSIM location code.
+	 * @param variable     Index of the coefficient to return (0: constant term, 1: Sac derivative, 2: Export derivative).
+	 * @param ave_type     Averaging type (corresponding to CalSIM code).
+	 * @param month        Calendar month.
+	 * @param year         Calendar year.
+	 * @param sac0         Nominal Sacramento flow for linearization.
+	 * @param exp0         Nominal Export flow for linearization.
+	 * @param targetWQ     Water quality (EC) target.
+	 * @return The requested coefficient for the linear constraint.
+	 */
 	public double lineGenImpl(ArrayList<double[][]> monthlyInput, int location, int variable, 
 			int ave_type, int month,int year, double sac0, double exp0, double targetWQ) {
 		boolean verbose = false;
 		int cyclePlaceholder = 0; // TODO hardwired, need to use the actual cycle
-		
+
 		double[][] grad = null;
 		int siteNDX = this.getIndexForSite(location);
 
@@ -220,7 +257,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		//                    + monthlyInput.get(5)[0][0]);
 		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, int0, int1, year, month, cyclePlaceholder,
 				ave_type);
-		
+
 		GridResult gr;
 		double loBound0=4000; double hiBound0=22000; // Todo: coordinate
 		double loBound1=800.; double hiBound1=12800;
@@ -230,16 +267,16 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 			gr = sm.evaluateOnGrid(monthlyInput, year, month, loBound0, hiBound0, 4, loBound1, hiBound1, 3);
 			cachedGridResult.put(rec,gr);
 		}
-		
+
 		int feasible = assessFeasible(gr, siteNDX, targetWQ);  //TODO in early prototypes siteNDX should be 0
 		if (verbose) {
 			if (feasible > 0) {
 				System.out.println("Year "+year+ " Month "+ month + " infeasible ++++++++++++++++++");
-	
+
 			}
 			if (feasible < 0) {
 				System.out.println("Year "+year+ " Month "+ month + " always  feasible ---------------");
-	
+
 			}
 			if (feasible == 0) {
 				System.out.println("Year "+year+ " Month "+ month + " sometimes feasible ==============");
@@ -280,12 +317,15 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 
 	}
 
-	/** Return > 0 if infeasible, < 0 if always feasible and 0 if varies over range
-	 * 
-	 * @param gr
-	 * @param siteNdx
-	 * @param targetWQ
-	 * @return
+	/**
+	 * Evaluates the grid of surrogate outputs to assess overall feasibility relative to the target.
+	 *
+	 * @param gr       The grid result containing surrogate predictions.
+	 * @param siteNdx  The output index corresponding to the location of interest.
+	 * @param targetWQ The water quality target.
+	 * @return -1 if all grid values are below the target (always feasible),
+	 *          1 if all grid values are above the target (infeasible),
+	 *          0 if the grid contains a mix of values.
 	 */
 	private int assessFeasible(GridResult gr, int siteNdx, double targetWQ) {
 		int nx0 = gr.getGridInput0().length;
@@ -295,17 +335,17 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		for (int i=0; i< nx0; i++) {
 			for (int j=0; j<nx1; j++) {
 				double sac = gr.getGridInput0()[i];
-				
+
 				double est = gr.getResult()[i][j][siteNdx];
-			    if (est > targetWQ) { allNeg=false;}
-			    else if (est < targetWQ) { allPos=false; }
-			    if (! (allNeg || allPos)) return 0;  // truncate early if we already know the case is mixed
-			    	
+				if (est > targetWQ) { allNeg=false;}
+				else if (est < targetWQ) { allPos=false; }
+				if (! (allNeg || allPos)) return 0;  // truncate early if we already know the case is mixed
+
 			}
 		}
 		// TODO check sure not allPos and allNeg
 		int ret = allPos ? 1 : 0;  // positive is "higher than objective"
-	    ret = allNeg ? -1 : ret;
+		ret = allNeg ? -1 : ret;
 		return ret;
 	}
 
@@ -362,7 +402,6 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	 * @return
 	 */
 	public String inputLogHeader(InputSizeInfo sizeInfo) {
-
 		int maxLag = sizeInfo.maxSize;
 		String base="surrogate_id,context,year,month,cycle,avetype,failed,comment,batch,variable";
 		StringBuilder sb = new StringBuilder(maxLag*3);
@@ -374,10 +413,10 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	}	
 
 	public float annEC(ArrayList<double[][]> monthly, int location, int ave_type, int month, int year) {	
-	    //for average types that don't have an additional parameter
+		//for average types that don't have an additional parameter
 		return annEC(monthly,location,ave_type,0.,month,year);
 	}
-	
+
 	public float annEC(ArrayList<double[][]> monthly, int location, int ave_type, double ave_thresh, int month, int year) {
 
 		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
@@ -390,8 +429,8 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 				year, month, cyclePlaceholder,ave_type);
 		this.logInputs(sm, rec, monthly, false, "annEC",null);
 		// index within the surrogate output of the site of interest
-        int locIndex = this.getIndexForSite(location); //TODO this got hardwired to zero early on, is it fixed?
-		
+		int locIndex = this.getIndexForSite(location); //TODO this got hardwired to zero early on, is it fixed?
+
 		if (cachedSurrogate.containsKey(rec)) {
 			double[][] cached = cachedSurrogate.get(rec);
 			return (float) cached[0][locIndex]; // cachedSurrogate(rec,location); // TODO add index for variable
@@ -421,17 +460,14 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	public float requiredFlow(double target, ArrayList<double[][]> monthlyInputs, 
 			double flowLoBound, double flowHiBound, int location,
 			int ave_type, int month, int year) {
- 		
-		//TODO Check if ave_type requires criterion. 
-		//SurrogateMonth sm = getSurrogateForSite(location,ave_type);
 
 		return requiredFlow(target, monthlyInputs,
-				   flowLoBound, flowHiBound, location, ave_type, month, year, 0.);
+				flowLoBound, flowHiBound, location, ave_type, month, year, 0.);
 	}
 
-	
 
-	
+
+
 	/**
 	 * Given historical input, location find the required Sacramento flow to meet 
 	 * a salinity or EC Target if such a value lies between sacLoBound and sacHiBound.
@@ -450,25 +486,25 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	public float requiredFlow(double target, ArrayList<double[][]> monthlyInputs, 
 			double flowLoBound, double flowHiBound, int location,
 			int ave_type, int month, int year, double nth) {
-		
-        //if (location != this.X2_CALSIM)) {
-        //	throw new IllegalArgumentException("")
-        //}
-      
+
+		//if (location != this.X2_CALSIM)) {
+		//	throw new IllegalArgumentException("")
+		//}
+
 		SurrogateMonth sm = getSurrogateForSite(location,ave_type);
 		if (ave_type == AggregateMonths.NTH_SMALLEST.calsimCode) {
 			sm.getAgg().setN((int) nth);
 			System.out.println("requiredFlow data dump");
-		    DataDumper dumper = new DataDumper();
-		    dumper.dumpInputs(monthlyInputs);
+			DataDumper dumper = new DataDumper();
+			dumper.dumpInputs(monthlyInputs);
 		}
-	
-		
+
+
 		InverseSurrogateMonth ism = new InverseSurrogateMonth(sm);
 		int flowIndex=0;
 		// TODO location was hardwired and code isn't checked for cases where flowIndex != 0
 		double req = ism.invert(target, monthlyInputs, flowIndex, flowLoBound, flowHiBound, 
-				          year, month, location);
+				year, month, location);
 
 		if (req > flowHiBound) {
 			// Salinity target was not feasible
@@ -479,9 +515,9 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		}
 		return (float) req;
 	}	
-	
-	
-//TODO: there are a lot of "placeholderCycles that need to be replaced
-// Need to make sure that the output location stuff is OK. surrogateForSite seems fine, but is the indexing used too?
+
+
+	//TODO: there are a lot of "placeholderCycles that need to be replaced
+	// Need to make sure that the output location stuff is OK. surrogateForSite seems fine, but is the indexing used too?
 }
 

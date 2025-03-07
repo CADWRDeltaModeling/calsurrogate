@@ -19,8 +19,6 @@ class AggregateMonthsTest {
 		AggregateMonths mmax = AggregateMonths.MONTHLY_MAX;
 		System.out.println(mmax.aggregate(data, 85, 1, 20));
 
-		AggregateMonths mmax14 = AggregateMonths.MONTHLY_MAX_14D_TRUNCATED;
-		System.out.println(mmax14.aggregate(data, 85, 1, 20));
         
 		AggregateMonths nth = AggregateMonths.NTH_SMALLEST;
 		nth.setN(5);
@@ -39,8 +37,7 @@ class AggregateMonthsTest {
 		// ordered: 62, 66, 72, 84, *85*, 86, 88, 90, 91, 91 
 		System.out.println(nth.aggregate(data2, 0, 1, 10)); // 85
 		
-		System.out.println("**");
-		System.out.println(mmax14.calsimCode);
+
 
 		
 		
