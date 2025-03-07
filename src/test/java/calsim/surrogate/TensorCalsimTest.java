@@ -68,9 +68,9 @@ class TensorCalsimTest {
 		floatInput.add(tide);
 		floatInput.add(smscg);
 
-		int year = 1994; // Ficticious
-		int month = 5; // Ficticious. When?
-
+		int year = 1994;
+		int month = 5; 
+        System.out.println("Problem spot");
 		double[][] out = surrogateMonth.annMonth(floatInput, year, month);
 		System.out.println("ANN Month: " + out[0][0]);
 

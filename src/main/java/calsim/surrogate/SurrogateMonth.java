@@ -107,10 +107,11 @@ public class SurrogateMonth {
 	    // The current month (year, month) is the final month in the history.
 	    // Thus, the starting month is (current month minus (nMonth - 1)) with day set to 1.
 	    int monthsHistory = firstNonNullDisagg.getNMonth();
+	    System.out.println("months history "+monthsHistory);
 	    java.time.YearMonth startYM = java.time.YearMonth.of(year, month).minusMonths(monthsHistory - 1);
 	    
 	    // Fetch the exogenous daily slice starting at the correct historical beginning.
-	    System.out.println("ndx: " + ndx + " year: " + year + " month "+month + "nDay" + nDay);
+	    System.out.println("Loading code ndx: " + ndx + " year: " + year + " month "+month + " nDay " + nDay);
 	    System.out.println(startYM);
 	    arr[0] = ExogenousTimeSeries.getInstance()
 	                     .dailyDataSlice(ndx, startYM.getYear(), startYM.getMonthValue(), 1, nDay);
@@ -233,7 +234,9 @@ public class SurrogateMonth {
 		for (int ivar = 0; ivar < nvar; ivar++) {
 			double[][] newInput = new double[nbatch][];
 			if (isExogenous(ivar)){
+				System.out.println("annMonth " + year + " "+month);
 				loadExogenous(newInput,ivar,year,month,nday);
+				System.out.println("Loaded");
 			}else {
 				for (int jbatch = 0; jbatch < nbatch; jbatch++) {
 					newInput[jbatch] = disagg[ivar].apply(year, month, monthlyInputs.get(ivar)[jbatch]);

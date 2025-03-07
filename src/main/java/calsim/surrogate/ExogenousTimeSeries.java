@@ -52,7 +52,6 @@ public class ExogenousTimeSeries {
     // Private constructor uses a CSV resource (hardwired file name) unless overridden.
     private ExogenousTimeSeries() {
         // Default start date is overridden after loading the file.
-        this.setStartDate(LocalDate.of(1910, 1, 1));
         String csvFile = "calsim/surrogate/sf_ha_tidal_range.csv";
         ensureLoaded(csvFile);
     }
@@ -101,6 +100,7 @@ public class ExogenousTimeSeries {
         LocalDate request = LocalDate.of(year, month, day);
         long offset = ChronoUnit.DAYS.between(startDate, request);
         double[] slice = new double[nday];
+        System.out.println("startDate "+startDate+" Local request date " + request + " offset: "+ offset+ " "+year+"-"+month+"-"+day);
         System.arraycopy(this.data[colIndex], (int) offset, slice, 0, nday);
         return slice;
     }
@@ -301,6 +301,7 @@ public class ExogenousTimeSeries {
     
 	// Expose setters (or use package-private access) if needed:
 	protected void setStartDate(LocalDate startDate) {
+        System.out.println("Setting start date to: " + startDate);
 	    this.startDate = startDate;
 	}
 	protected void setDataLength(int n) {
