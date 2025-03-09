@@ -3,8 +3,12 @@ package calsim.surrogate;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
+
+import calsim.surrogate.examples.ExampleExogAssignment;
 
 class SalinitySurrogateManagerTest {
 
@@ -19,8 +23,8 @@ class SalinitySurrogateManagerTest {
 		DisaggregateMonths daysOps = new DisaggregateMonthsDaysToOps(5, 1., 0.);
 		DisaggregateMonths[] disagg = { spline, spline, repeat, repeat, repeat };
 		AggregateMonths agg = AggregateMonths.MONTHLY_MEAN;
-		SurrogateMonth annMonth = new SurrogateMonth(disagg, mock, agg);
-
+		SurrogateMonth annMonth = new SurrogateMonth(disagg, mock, agg);		
+		
 		double[][] sac = { { 10000., 20000., 10000., 15000, 20000 }, { 10000., 20000., 10000., 15000, 20000 } };
 		double[][] exp = { { 4000., 4000., 12000., 12000., 12000. }, { 4000., 4000., 4000., 12000., 12000. } };
 		double[][] mix0 = { { 1., 1., 0.33, 0.33, 0.33 }, { 0., 0., 0.3, 0.3, 0.3 } };
@@ -55,10 +59,12 @@ class SalinitySurrogateManagerTest {
 		//DisaggregateMonths daysOps = new DisaggregateMonthsDaysToOps(5, 1., 0.);
 		DisaggregateMonths[] disagg = { spline, spline, repeat, repeat, repeat };
 		AggregateMonths agg = AggregateMonths.MONTHLY_MEAN;
-		SurrogateMonth annMonth00 = new SurrogateMonth(disagg, mock, agg);
-		SurrogateMonth annMonth01 = new SurrogateMonth(disagg, mock, agg);
-		SurrogateMonth annMonth10 = new SurrogateMonth(disagg, mock, agg);
-		SurrogateMonth annMonth11 = new SurrogateMonth(disagg, mock, agg);
+		List<ExogTimeSeriesAssignment> assigns = null;
+			
+		SurrogateMonth annMonth00 = new SurrogateMonth(disagg, mock, agg, assigns);
+		SurrogateMonth annMonth01 = new SurrogateMonth(disagg, mock, agg, assigns);
+		SurrogateMonth annMonth10 = new SurrogateMonth(disagg, mock, agg, assigns);
+		SurrogateMonth annMonth11 = new SurrogateMonth(disagg, mock, agg, assigns);
         ssm.setSurrogateForSite(0, 0, annMonth00);
         ssm.setSurrogateForSite(0, 1, annMonth01);
         ssm.setSurrogateForSite(1, 0, annMonth10);

@@ -78,12 +78,12 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	public final int MAL_CALSIM = 6; // Mallard is Chipps
 	public final int LVR_CALSIM = 7; // Los Vaqueros Intake
 	public final int MDR_CALSIM = 8; // Middle River Intake
-	public final int CCW_CALSIM = 9; // Victoria River Intake 
+	public final int VIC_CALSIM = 9; // Victoria River Intake 
 	public final int TRP_CALSIM = 10; // CVP Tracy Intake 
-	public final int CCF_CALSIM = 11;
-	public final int CCI_CALSIM = 12;  
+	public final int CCF_CALSIM = 11; // Clifton Court
+	public final int CCI_CALSIM = 12; // Clifton Court Intake near CC Ferry
 	public final int BDL_CALSIM = 20; // Beldons Landing
-	public final int MRZ_CALSIM = 21;
+	public final int MRZ_CALSIM = 21; // Martinez
 	public final int X2_CALSIM =  30; // X2
 
 

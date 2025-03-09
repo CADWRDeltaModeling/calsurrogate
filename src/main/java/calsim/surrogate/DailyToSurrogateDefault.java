@@ -22,7 +22,7 @@ public class DailyToSurrogateDefault implements DailyToSurrogate {
     /**
      * Constructs a new instance for passing through daily history.
      *
-     * @param nHistory the number of daily values expected for the ANN
+     * @param nHistory the number of daily values expected by the ANN
      * @param rev      if {@code true} the output sequence will be in reverse chronological order 
      *                 (current day first); if {@code false} the output sequence will be in forward 
      *                 chronological order (oldest day first).

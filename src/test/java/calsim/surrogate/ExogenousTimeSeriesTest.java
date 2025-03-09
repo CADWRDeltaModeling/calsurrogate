@@ -58,6 +58,7 @@ class ExogenousTimeSeriesTest {
         assertEquals(LocalDate.of(2020, 1, 1), start);
         // Test a slice from Var1 for 3 days starting at 2020-01-02.
         double[] slice = ext.dailyDataSlice("Var1", 2020, 1, 2, 3);
+        System.out.println(slice[0]+" "+slice[1]+" "+slice[2]);
         // Expected values for Var1 on 2020-01-02, 2020-01-03, 2020-01-04 are 1.1, 1.2, 1.3.
         assertEquals(1.1, slice[0], 1e-6);
         assertEquals(1.2, slice[1], 1e-6);

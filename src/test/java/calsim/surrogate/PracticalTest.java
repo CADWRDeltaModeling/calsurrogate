@@ -3,9 +3,13 @@ package calsim.surrogate;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import calsim.surrogate.examples.ExampleExogAssignment;
 
 @Disabled // This test is disabled for now because it requires a rock_slough model
 class PracticalTest {
@@ -91,7 +95,8 @@ class PracticalTest {
 			DisaggregateMonths[] disagg = { repeat, repeat, daysOps, spline, spline, spline, repeat };
 
 			AggregateMonths agg = AggregateMonths.MONTHLY_MEAN;
-			SurrogateMonth month = new SurrogateMonth(disagg, ann, agg);
+			List<ExogTimeSeriesAssignment> assigns = Arrays.asList(ExampleExogAssignment.TIDE.getAssignment());
+			SurrogateMonth month = new SurrogateMonth(disagg, ann, agg, assigns);
 			return month;
 		}
 

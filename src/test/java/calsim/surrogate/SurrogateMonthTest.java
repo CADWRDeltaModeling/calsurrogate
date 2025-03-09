@@ -26,7 +26,7 @@ class SurrogateMonthTest {
 		DisaggregateMonths daysOps = new DisaggregateMonthsDaysToOps(nMonthHist, 1., 0.);
 		// For simplicity, use spline for most disaggregators
 		DisaggregateMonths[] disagg = { spline, spline, repeat, repeat, repeat };
-		AggregateMonths agg = AggregateMonths.MONTHLY_MEAN;
+		AggregateMonths agg = AggregateMonths.MONTHLY_MEAN;	
 		SurrogateMonth annMonth = new SurrogateMonth(disagg, mock, agg);
 
 		double[][] sac = { { 10000., 20000., 10000., 15000, 20000 }, { 10000., 20000., 10000., 15000, 20000 } };

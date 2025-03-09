@@ -129,4 +129,23 @@ public class TensorWrapper implements Surrogate {
 	}
 
 	public String identifier() {return this.fpath;}
+
+	/**
+	 * Returns the index of the input matching the given name among the float inputs.
+	 * 
+	 * @param inputName The name of the ANN input.
+	 * @return the index of the input if found.
+	 * @throws IllegalArgumentException if the input name is not found among the available tensor names.
+	 */
+    @Override
+    public int getInputIndex(String inputName) {
+        for (int i = 0; i < tensorNames.length; i++) {
+            if (tensorNames[i].equals(inputName)) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException("Input name '" + inputName +
+                "' not found among available tensor names: " + java.util.Arrays.toString(tensorNames));
+    }
+    
 }

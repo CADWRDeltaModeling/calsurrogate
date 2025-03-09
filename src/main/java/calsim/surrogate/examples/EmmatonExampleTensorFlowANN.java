@@ -2,6 +2,8 @@ package calsim.surrogate.examples;
 
 import calsim.surrogate.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import calsim.surrogate.*;
 
@@ -42,7 +44,8 @@ public class EmmatonExampleTensorFlowANN {
 		DisaggregateMonths[] disagg = { spline, spline, daysOps, spline, spline, spline, repeat };
 		Surrogate emm = emmatonANN();
 		AggregateMonths agg = AggregateMonths.MONTHLY_MEAN;
-		SurrogateMonth month = new SurrogateMonth(disagg, emmatonANN(), agg);
+		List<ExogTimeSeriesAssignment> assigns = Arrays.asList(ExampleExogAssignment.TIDE.getAssignment());
+		SurrogateMonth month = new SurrogateMonth(disagg, emmatonANN(), agg, assigns);
 		return month;
 
 	}

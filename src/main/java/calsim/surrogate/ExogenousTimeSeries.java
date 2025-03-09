@@ -49,10 +49,11 @@ public class ExogenousTimeSeries {
     // Maps variable names (lower-case) to their zero-based column index in the data array
     private Map<String, Integer> colNameIndexMap = new HashMap<>();
 
+    private final String csvFile = "calsim/surrogate/sf_tide.csv"; // TODO: hardwire    
+    
     // Private constructor uses a CSV resource (hardwired file name) unless overridden.
     private ExogenousTimeSeries() {
         // Default start date is overridden after loading the file.
-        String csvFile = "calsim/surrogate/sf_ha_tidal_range.csv";
         ensureLoaded(csvFile);
     }
 
@@ -100,7 +101,7 @@ public class ExogenousTimeSeries {
         LocalDate request = LocalDate.of(year, month, day);
         long offset = ChronoUnit.DAYS.between(startDate, request);
         double[] slice = new double[nday];
-        System.out.println("startDate "+startDate+" Local request date " + request + " offset: "+ offset+ " "+year+"-"+month+"-"+day);
+        //System.out.println("startDate "+startDate+" Local request date " + request + " offset: "+ offset+ " "+year+"-"+month+"-"+day);
         System.arraycopy(this.data[colIndex], (int) offset, slice, 0, nday);
         return slice;
     }
@@ -263,7 +264,6 @@ public class ExogenousTimeSeries {
         }
     }
 
- // In ExogenousTimeSeries.java, add:
     protected void loadDataFromPath(String path) throws IOException {
         try (InputStream stream = new FileInputStream(path)) {
             CSVFileInfo info = fileInfo(stream);
@@ -298,6 +298,16 @@ public class ExogenousTimeSeries {
             this.data = tempData;
         }
     }
+
+ // Inside ExogenousTimeSeries.java
+
+    /**
+     * Returns the CSV file name used to load the exogenous time series.
+     */
+    public String getFileName() {
+        return this.csvFile;
+    } 
+    
     
 	// Expose setters (or use package-private access) if needed:
 	protected void setStartDate(LocalDate startDate) {

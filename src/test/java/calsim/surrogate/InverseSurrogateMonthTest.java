@@ -3,8 +3,12 @@ package calsim.surrogate;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
+
+import calsim.surrogate.examples.ExampleExogAssignment;
 
 class InverseSurrogateMonthTest {
 
@@ -21,6 +25,7 @@ class InverseSurrogateMonthTest {
 		DisaggregateMonths[] disagg = { spline, spline, repeat, repeat, repeat };
 		AggregateMonths agg = AggregateMonths.MONTHLY_MEAN;
 		SurrogateMonth annMonth = new SurrogateMonth(disagg, mock, agg);
+	
 
 		double[][] sac = { {10000., 12000., 10000., 20000, 20000. }};
 		double[][] exp = { { 4000., 4000., 12000., 12000.,12000. } };

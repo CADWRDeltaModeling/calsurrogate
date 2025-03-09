@@ -42,6 +42,16 @@ public interface Surrogate extends DailyToSurrogate {
 		return getDailyToSurrogate().dailyToSurrogateInput(dailyData, currentIndex);
 	};
 
+    /**
+     * Returns the input index corresponding to the given input name.
+     * Concrete surrogate implementations should override this method.
+     *
+     * @param inputName the name of the ANN input
+     * @return the index for the input, or a negative value if not found.
+     */
+    default int getInputIndex(String inputName) {
+        throw new UnsupportedOperationException("getInputIndex not implemented for surrogate " + identifier());
+    }	
 	public DailyToSurrogate getDailyToSurrogate();
 	
 	

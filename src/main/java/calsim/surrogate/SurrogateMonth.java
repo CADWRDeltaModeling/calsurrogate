@@ -1,6 +1,7 @@
 package calsim.surrogate;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.*;
 
 
@@ -18,20 +19,22 @@ public class SurrogateMonth {
 	}
 
 	private Surrogate daily;
-    private int[] exogInputsNdx;  // TODO: hardwired logic
+    private List<ExogTimeSeriesAssignment> assignments;
     private DisaggregateMonths firstNonNullDisagg; // non-null used for length calculations
 
     /**
-     * Constructor that leaves exogInputsNdx open. This is preferred as we vary the architectures
-     * @param disagg
-     * @param daily
-     * @param agg
-     * @param exogInputsNdx
+     * Constructs a SurrogateMonth
+     * All null entries in the assignments list are replaced by UNASSIGNED.
+     *
+     * @param disagg      Array of disaggregators (at least one must be non-null)
+     * @param daily       The surrogate (ANN) that performs the estimation
+     * @param agg         Aggregator for monthly values
+     * @param assignments List of exogenous assignments. nulls will be reassigned to UNASSIGNED.
      */
     public SurrogateMonth(DisaggregateMonths[] disagg, 
-    		Surrogate daily, 
-    		AggregateMonths agg,
-    		int[] exogInputsNdx) {
+            Surrogate daily, 
+            AggregateMonths agg,
+            List<ExogTimeSeriesAssignment> assignments) {
 
     	boolean allNull = true;
 
@@ -49,25 +52,83 @@ public class SurrogateMonth {
     	this.disagg = disagg;
     	this.daily = daily;
     	this.agg = agg;
-    	this.exogInputsNdx = exogInputsNdx;
 
+        // If the entire assignments list is null, use default assignments.
+        if (assignments == null) {
+            assignments = createDefaultAssignments();
+        }    	
+    	
+    	// Replace any null assignments with UNASSIGNED.
+    	for (int i = 0; i < assignments.size(); i++) {
+    	    if (assignments.get(i) == null) {
+    	        assignments.set(i, ExogTimeSeriesAssignment.UNASSIGNED);
+    	    }
+    	}
+    	this.assignments = assignments;
+
+    	// Check and resolve names/indexes for all concrete assignments.
+    	resolveAssignments(this.assignments, ExogenousTimeSeries.getInstance(), daily); 	
+
+    }
+
+    /**
+     * Second constructor with all UNASSIGNED time series.
+     *
+     * @param disagg Array of disaggregators (at least one must be non-null)
+     * @param daily  The surrogate (ANN) that performs the estimation
+     * @param agg    Aggregator for monthly values
+     */
+    public SurrogateMonth(DisaggregateMonths[] disagg, Surrogate daily, AggregateMonths agg) {
+        // Delegate to the main constructor with a null assignments list.
+        this(disagg, daily, agg, null);
     }
 
     
     /**
-     * this hardwires the exogenous column to input index 5 (usual spots for tgetides in legacy ANNs)
-     * @param disagg
-     * @param daily
-     * @param agg
+     * Creates a default assignments list that contains a single UNASSIGNED assignment.
+     *
+     * @return List of ExogTimeSeriesAssignment with default UNASSIGNED entries.
      */
-	public SurrogateMonth(DisaggregateMonths[] disagg, 
-			              Surrogate daily, 
-			              AggregateMonths agg) {
-		// for legacy reasons, {5} is the usual tide index, which is exogenous
- 		this(disagg,daily,agg,null);
- 	    int[] exogNdx = {5};
- 		this.exogInputsNdx = exogNdx;
-	}
+    private static List<ExogTimeSeriesAssignment> createDefaultAssignments() {
+        List<ExogTimeSeriesAssignment> defaultList = new ArrayList<>();
+        defaultList.add(ExogTimeSeriesAssignment.UNASSIGNED);
+        return defaultList;
+    }    
+    
+    /**
+     * Resolves all exogenous time series assignments by checking file name consistency and
+     * querying the necessary indices from ExogenousTimeSeries and the surrogate.
+     *
+     * @param assignments List of exogenous assignments.
+     * @param ets         The singleton instance of ExogenousTimeSeries.
+     * @param surrogate   The surrogate used to resolve ANN input indices.
+     */
+    private void resolveAssignments(List<ExogTimeSeriesAssignment> assignments, 
+                                    ExogenousTimeSeries ets, 
+                                    Surrogate surrogate) {
+        String expectedFileName = ets.getFileName();
+        for (ExogTimeSeriesAssignment assign : assignments) {
+            if (assign != ExogTimeSeriesAssignment.UNASSIGNED) {
+                // Check file name consistency.
+                if (!assign.getFileName().equals(expectedFileName)) {
+                    throw new IllegalArgumentException("Assignment file name " + assign.getFileName() +
+                        " does not match expected " + expectedFileName);
+                }
+                // Resolve file column index.
+                int colIndex = ets.colIndexForVariable(assign.getFileColumn());
+                assign.setFileColumnIndex(colIndex);
+                // Resolve ANN input index.
+                int annIndex = surrogate.getInputIndex(assign.getAnnInputName());
+                if (annIndex < 0) {
+                    throw new IllegalArgumentException("ANN input name " + assign.getAnnInputName() + 
+                            " not found in surrogate.");
+                }
+                assign.setAnnInputIndex(annIndex);
+            }
+        }
+    }    
+    
+    
 
 	public int bufferNDay(int year, int month) {
 		return firstNonNullDisagg.getNDay(year, month);
@@ -100,8 +161,21 @@ public class SurrogateMonth {
 	 * @see #bufferNDay(int, int)
 	 */
 	public void loadExogenous(double[][] arr, int ivar, int year, int month, int nDay) {
-	    int ndx = this.getExogInputIndex(ivar);
-	    int nBatch = arr.length; // array will end up being nBatch x nDay
+		
+        ExogTimeSeriesAssignment assign = getAssignmentForAnnInput(ivar);
+        if (assign == ExogTimeSeriesAssignment.UNASSIGNED) {
+            throw new IllegalArgumentException("No exogenous assignment found for ANN input " + ivar);
+        }
+        int fileColIndex = assign.getFileColumnIndex();
+        
+        // Verify file name consistency.
+        String expectedFileName = ExogenousTimeSeries.getInstance().getFileName();
+        if (!assign.getFileName().equals(expectedFileName)) {
+            throw new IllegalArgumentException("Assignment file name " + assign.getFileName() +
+                " is inconsistent with expected " + expectedFileName);
+        }        
+        
+	    int nbatch = arr.length; // array will end up being nBatch x nDay
 
 	    // Compute the starting year and month based on the multi-month history.
 	    // The current month (year, month) is the final month in the history.
@@ -110,16 +184,18 @@ public class SurrogateMonth {
 	    System.out.println("months history "+monthsHistory);
 	    java.time.YearMonth startYM = java.time.YearMonth.of(year, month).minusMonths(monthsHistory - 1);
 	    
-	    // Fetch the exogenous daily slice starting at the correct historical beginning.
-	    System.out.println("Loading code ndx: " + ndx + " year: " + year + " month "+month + " nDay " + nDay);
-	    System.out.println(startYM);
-	    arr[0] = ExogenousTimeSeries.getInstance()
-	                     .dailyDataSlice(ndx, startYM.getYear(), startYM.getMonthValue(), 1, nDay);
-
-	    // Copy the same exogenous data across all batch entries.
-	    for (int jbatch = 1; jbatch < nBatch; jbatch++) {
-	        arr[jbatch] = new double[arr[0].length];
-	        System.arraycopy(arr[0], 0, arr[jbatch], 0, arr[0].length);
+	    // Fetch the exogenous daily slice matching timing of the file data and array at the beginning of the slice.
+	    // The result of this fetch is a multi-month (usually 5) array of daily values. 
+	    // For a five month file the result will be somewhere around 150 days.
+	    // The index of the first of the current month will be somewhere around 30 values from the end around index 120
+	    // You can get that index from the Disaggregation class.
+	    double[] dailySlice = ExogenousTimeSeries.getInstance().dailyDataSlice(fileColIndex, 
+	                                            startYM.getYear(), startYM.getMonthValue(), 1, nDay);
+	    
+	    // Copy the same exogenous slice to each member of the batch.
+	    for (int j = 0; j < nbatch; j++) {
+	        arr[j] = new double[dailySlice.length];
+	        System.arraycopy(dailySlice, 0, arr[j], 0, dailySlice.length);
 	    }
 	}
 
@@ -334,23 +410,30 @@ public class SurrogateMonth {
 		this.daily = daily;
 	}
 
+	/**
+	 * Returns true if the specified ANN input index corresponds to an exogenous variable.
+	 * In other words, if there is a concrete assignment (i.e. not UNASSIGNED) for the input.
+	 *
+	 * @param ivar the ANN input index to check.
+	 * @return true if there is an exogenous assignment for ivar; false otherwise.
+	 */
 	public boolean isExogenous(int ivar) {
-		return getExogInputIndex(ivar) >= 0;
+	    ExogTimeSeriesAssignment assignment = getAssignmentForAnnInput(ivar);
+	    return assignment != ExogTimeSeriesAssignment.UNASSIGNED;
 	}
 	
-	/**
-	 * Returns the index within the exogenous input time series that pertains to variable 
-	 * @param ivar
-	 * @return column index within exogenous time series
-	 */
-	public int getExogInputIndex(int ivar) {
-		for (int i = 0; i < exogInputsNdx.length; i++) {			
-			if (this.exogInputsNdx[i] == ivar) {
-				return i;
-			}
-		}
-		return -1;
-	}	
+    /**
+     * Helper method to retrieve the assignment corresponding to a given ANN input index.
+     * Returns UNASSIGNED if no assignment is found.
+     */
+    private ExogTimeSeriesAssignment getAssignmentForAnnInput(int annInput) {
+        for (ExogTimeSeriesAssignment assign : assignments) {
+            if (assign.getAnnInputIndex() == annInput) {
+                return assign;
+            }
+        }
+        return ExogTimeSeriesAssignment.UNASSIGNED;
+    }	
     
 	public int numberOfDays(int month, int year){
 		int days;
