@@ -16,12 +16,8 @@ repositories {
     mavenCentral()
 }
 
-
-
-
 sourceCompatibility = 1.8
-targetCompatibility =1.8 
-
+targetCompatibility = 1.8
 
 dependencies {
     // things that start with "libs." are defined in the gradle/libs.version.toml
@@ -34,11 +30,71 @@ dependencies {
 
     testImplementation 'org.junit.platform:junit-platform-suite-api:1.10.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
-   testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
 }
+
 test {
-   useJUnitPlatform()
+    useJUnitPlatform()
+}
+
+jar {
+    // By default, the jar task packages classes and resources automatically.
+    // If you have additional directories, you can include them explicitly.
+    //from('src/main/resources') {
+    //    include '**/*'  // This is often unnecessary if your resources are in the standard location.
+    //}
+    
+    // Customize the jar manifest if desired
+    manifest {
+        attributes(
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version,
+            // 'Main-Class': 'com.example.Main' // Uncomment if this jar is executable
+        )
+    }
+    
+    // Optionally, include extra files or folders:
+    // from('extraFolder') {
+    //     into 'extra'
+    // }
 }
 
 
 
+// --- Javadoc Generation Configuration ---
+// Customize the default javadoc task provided by the java-library plugin.
+javadoc {
+    source = sourceSets.main.allJava
+    options.encoding = 'UTF-8'
+    // Uncomment and adjust the following line if you need to link to external Javadoc APIs.
+    // options.links("https://docs.oracle.com/javase/8/docs/api/")
+}
+
+// --- Custom Task: Copy Javadoc for GitHub Pages Deployment ---
+// This task copies the generated Javadoc from build/docs/javadoc to build/gh-pages.
+task copyJavadoc(type: Copy) {
+    dependsOn javadoc
+    from "${buildDir}/docs/javadoc"
+    into "${buildDir}/gh-pages"
+}
+
+// --- Custom Task: Deploy Javadoc to GitHub Pages ---
+// This task switches to your gh-pages branch, copies over the new documentation,
+// commits the changes, pushes them, and then switches back to your previous branch.
+// Adjust the script if your branch strategy or paths differ.
+task deployJavadoc {
+    dependsOn copyJavadoc
+    doLast {
+        def command = """
+            git checkout gh-pages &&
+            cp -R ${buildDir}/gh-pages/* . &&
+            git add . &&
+            git commit -m 'Update Javadoc' &&
+            git push origin gh-pages &&
+            git checkout -
+        """
+        exec {
+            commandLine 'bash', '-c', command
+        }
+    }
+}
