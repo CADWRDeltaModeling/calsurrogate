@@ -40,11 +40,11 @@ class SalinitySurrogateManagerTest {
 		int year = 2010;
 		int month = 10;	
 		int cycle = 13;
-		int monthly = 0;
+        int monthly = 0;
+        
+        RunRecord rec = new RunRecord(mock, floatInput, 0, 0, SalinitySurrogateManager.CACHE_REC_TEST,
+                year, month, cycle, 0);
 
-		RunRecord rec = new RunRecord(mock, sac[0][0],exp[0][0],0,0,year,month,cycle,monthly);
-		ssm.logInputs(annMonth, rec, floatInput, false,"","");
-		
 	}
 	
 	

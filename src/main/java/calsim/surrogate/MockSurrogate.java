@@ -85,4 +85,12 @@ public class MockSurrogate implements Surrogate {
 		return this.dayToSurrogate;
 	}
 
+    /**
+     * Returns the expected number of features (i.e. the length of the float ArrayList)
+     * that this surrogate requires.
+     */
+    public int getNFeatures() {
+    	return 5;
+    }
+	
 }

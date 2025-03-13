@@ -18,8 +18,7 @@ public class LinearConstraint {
 	 * Computes the gradient (finite difference approximation) of the surrogate output with respect to
 	 * Sacramento and Export flows.
 	 *
-	 * <p>The function builds five perturbed cases per input location (each corresponding to a
-	 * particular perturbation scenario):
+	 * <p>The function builds five perturbed cases:
 	 * <ul>
 	 *   <li>Index 0: Unperturbed (nominal) value.
 	 *   <li>Index 1: Sacramento flow perturbed by -1.
@@ -45,6 +44,8 @@ public class LinearConstraint {
 	    final double[] perturb = { -1.0, 1.0 };  // Offsets for finite difference estimation
 	    int nLoc = monthlyInputs.size();
 	    int nTime = monthlyInputs.get(0)[0].length;
+	    System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+	    System.out.println("In gradient nLoc="+nLoc+" nTime = "+nTime+" nbatch = "+monthlyInputs.get(0).length);
 
 	    // Build a list of perturbed inputs (one per location)
 	    ArrayList<double[][]> perturbedInputs = new ArrayList<>();
@@ -94,8 +95,9 @@ public class LinearConstraint {
 	 * Generate a linear constraint for QSac and Qexp that serves to enforce a
 	 * single water quality objective.
 	 * 
-	 * Note that unlike a lot of the other methods in this library that will treat
-	 * all of the locations covered by a multivariate surrogate at once, this is
+	 * Note that unlike a lot of the other methods in this library that will iterate
+	 * all of the locations covered by a multivariate surrogate at once and hope that 
+	 * this pays off through caching, the present routine is
 	 * just a utility for a single location and water quality target. The reason for
 	 * that is that the targets vary and are not given for all the locations at once
 	 * in a single call from WRESL. So what ends up happening is that the client

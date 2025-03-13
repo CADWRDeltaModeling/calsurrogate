@@ -3,6 +3,7 @@ package calsim.surrogate;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
@@ -70,36 +71,46 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	 * Martinez }
 	 */
 	// Only Emmaton in prototype
-	public final int JER_CALSIM = 1; // Jersey Point
-	public final int RSL_CALSIM = 2; // Rock Slough
-	public final int EMM_CALSIM = 3; // Emmaton
-	public final int ANH_CALSIM = 4; // Antioch
-	public final int CLL_CALSIM = 5; // Collinsville
-	public final int MAL_CALSIM = 6; // Mallard is Chipps
-	public final int LVR_CALSIM = 7; // Los Vaqueros Intake
-	public final int MDR_CALSIM = 8; // Middle River Intake
-	public final int VIC_CALSIM = 9; // Victoria River Intake 
-	public final int TRP_CALSIM = 10; // CVP Tracy Intake 
-	public final int CCF_CALSIM = 11; // Clifton Court
-	public final int CCI_CALSIM = 12; // Clifton Court Intake near CC Ferry
-	public final int BDL_CALSIM = 20; // Beldons Landing
-	public final int MRZ_CALSIM = 21; // Martinez
-	public final int X2_CALSIM =  30; // X2
+	public static final int JER_CALSIM = 1; // Jersey Point
+	public static final int RSL_CALSIM = 2; // Rock Slough
+	public static final int EMM_CALSIM = 3; // Emmaton
+	public static final int ANH_CALSIM = 4; // Antioch
+	public static final int CLL_CALSIM = 5; // Collinsville
+	public static final int MAL_CALSIM = 6; // Mallard is Chipps
+	public static final int LVR_CALSIM = 7; // Los Vaqueros Intake
+	public static final int MDR_CALSIM = 8; // Middle River Intake
+	public static final int VIC_CALSIM = 9; // Victoria River Intake 
+	public static final int TRP_CALSIM = 10; // CVP Tracy Intake 
+	public static final int CCF_CALSIM = 11; // Clifton Court
+	public static final int CCI_CALSIM = 12; // Clifton Court Intake near CC Ferry
+	public static final int BDL_CALSIM = 20; // Beldons Landing
+	public static final int MRZ_CALSIM = 21; // Martinez
+	public static final int X2_CALSIM =  30; // X2
 
 
+	public static final int CACHE_REC_LINEGEN = 1392;
+	public static final int CACHE_REC_GRID  = 1592;
+	public static final int CACHE_REC_GRADIENT = 1792;
+	public static final int CACHE_REC_ANNEC = 1993;
+	public static final int CACHE_REC_REQFLOW_BASE = 2093;
+	public static final int CACHE_REC_TEST = 3093;	
+	
+	
 	// Only Monthly mean and maximum of 14-day running ave are implemented
 	// and for 14-day running ave the actual implementation is truncated as explained
 	// in the aggregateMonth code.
 
-	public final int MONTHLY_AVE = 1; 
-	public final int MAX_14 = 6;
+	public static final int MONTHLY_AVE = 1; 
+	public static final int MAX_14 = 6;
 
 	final HashMap<SurrogateIdentifier, SurrogateMonth> surrogateForLoc = new HashMap<SurrogateIdentifier, SurrogateMonth>();
 	final HashMap<Integer, Integer> surrogateNdx = new HashMap<Integer, Integer>();
-	final HashMap<RunRecord, double[][]> cachedGradient = new HashMap<RunRecord, double[][]>();
-	final HashMap<RunRecord, double[][]> cachedSurrogate = new HashMap<RunRecord, double[][]>();
-	final HashMap<RunRecord, GridResult> cachedGridResult = new HashMap<RunRecord, GridResult>();
-
+	
+	public final int CACHELEN = 1000; 
+	final Map<RunRecord, double[][]> cachedGradient = new LRUCache<>(1000);
+	final Map<RunRecord, double[][]> cachedSurrogate = new LRUCache<>(1000);
+	final Map<RunRecord, GridResult> cachedGridResult = new LRUCache<>(1000);
+	final Map<RunRecord, Float> cachedRequiredFlow = new LRUCache<>(1000);
 	private Logger LOGGER = null;
 	private boolean header=false;
 	boolean isLogging = false;
@@ -148,8 +159,8 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	 * @return
 	 */
 	public int getIndexForSite(int calsimLocation) {
-		//return this.surrogateNdx.get(Integer.valueOf(calsimLocation)).intValue();
-		return 0;  //TODO hardwire
+		return this.surrogateNdx.get(Integer.valueOf(calsimLocation)).intValue();
+		//return 0;  //TODO previous hardwire
 	}
 
 	/**
@@ -191,131 +202,73 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 
 
 
-	/**
-	 * Generates the linear constraint coefficients for a given location and water quality target.
-	 *
-	 * <p>This method performs the following steps:
-	 * <ol>
-	 *   <li>Retrieves the surrogate model for the given location and averaging type.
-	 *   <li>Constructs a RunRecord for caching purposes. Note the use of several hard-coded values:
-	 *       <ul>
-	 *         <li><b>int0 = 5:</b> Batch size (matching the perturbation cases in finite differences).
-	 *         <li><b>int1 = 0:</b> A placeholder parameter (purpose TBD).
-	 *         <li><b>cyclePlaceholder = 0:</b> Placeholder for simulation cycle.
-	 *       </ul>
-	 *   <li>Evaluates the surrogate model on a coarse grid defined by:
-	 *       <ul>
-	 *         <li>Sacramento flow: lower bound 4000 and upper bound 22000, with 4 grid points.
-	 *         <li>Export flow: lower bound 800 and upper bound 12800, with 3 grid points.
-	 *       </ul>
-	 *       These bounds and grid resolutions are hard-coded and may need calibration.
-	 *   <li>Calls {@code assessFeasible} to determine if the surrogate output is:
-	 *       <ul>
-	 *         <li>Always below the target (feasible): returns -1.
-	 *         <li>Always above the target (infeasible): returns 1.
-	 *         <li>Mixed: returns 0.
-	 *       </ul>
-	 *   <li>If the entire grid is either always feasible or never feasible, returns a trivial constraint:
-	 *       <ul>
-	 *         <li>Always feasible: returns {0, -1, 1}.
-	 *         <li>Never feasible: returns {-(hiBound0 - loBound1), -1, 1} (for the given bounds, this equals {-21200, -1, 1}).
-	 *       </ul>
-	 *   <li>Otherwise, computes (or retrieves from cache) the gradient via finite differences and then
-	 *       calls {@code formulateConstraint} to generate the linear constraint coefficients.
-	 * </ol>
-	 *
-	 * @param monthlyInput List of monthly input arrays.
-	 * @param location     CalSIM location code.
-	 * @param variable     Index of the coefficient to return (0: constant term, 1: Sac derivative, 2: Export derivative).
-	 * @param ave_type     Averaging type (corresponding to CalSIM code).
-	 * @param month        Calendar month.
-	 * @param year         Calendar year.
-	 * @param sac0         Nominal Sacramento flow for linearization.
-	 * @param exp0         Nominal Export flow for linearization.
-	 * @param targetWQ     Water quality (EC) target.
-	 * @return The requested coefficient for the linear constraint.
-	 */
 	public double lineGenImpl(ArrayList<double[][]> monthlyInput, int location, int variable, 
-			int ave_type, int month,int year, double sac0, double exp0, double targetWQ) {
-		boolean verbose = false;
-		int cyclePlaceholder = 0; // TODO hardwired, need to use the actual cycle
+	        int ave_type, int month, int year, double sac0, double exp0, double targetWQ) {
+	    boolean verbose = true;
+	    int cyclePlaceholder = 0; // still a placeholder
 
-		double[][] grad = null;
-		int siteNDX = this.getIndexForSite(location);
+	    int siteNDX = this.getIndexForSite(location);
+	    System.out.println("Linegen Location: "+location+" siteNDX "+siteNDX);
+	    SurrogateMonth sm = getSurrogateForSite(location, ave_type);
+	    LinearConstraint linear = new LinearConstraint(sm);
 
-		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
-		LinearConstraint linear = new LinearConstraint(sm); 
+	    // For lineGen, we want to cache based on the entire input.
+	    // Here we use the convenience constructor: note that we pass the raw monthly inputs.
+	    // By convention, we set intInput0 = 0 (not location-specific here),
+	    // intInput1 = 0, and intContext = CACHE_REC_LINEGEN.
+	    RunRecord rec = new RunRecord(sm.getDailySurrogate(), monthlyInput, 0, 0, CACHE_REC_LINEGEN,
+	                                  year, month, cyclePlaceholder, ave_type);
 
+	    GridResult gr;
+	    double loBound0 = 4000, hiBound0 = 22000;
+	    double loBound1 = 800., hiBound1 = 12800;
+	    if (this.cachedGridResult.containsKey(rec)) {
+	        System.out.println("&&&&&&&&&&&&& In Grid, Key recognized: " + rec.toString());
+	        gr = cachedGridResult.get(rec);
+	    } else {
+	        System.out.println("************* Key NOT recognized: " + rec.toString());
+	        gr = sm.evaluateOnGrid(monthlyInput, year, month, loBound0, hiBound0, 4, loBound1, hiBound1, 3);
+	        cachedGridResult.put(rec, gr);
+	    }
 
-		// TODO what are the 0,0 on second line?
-		int int0 = 5;  // batch size
-		int int1 = 0;
-		//System.out.println("Generating Run Record in linegen yr/mon "+year+" "+month );
-		//System.out.println( monthlyInput.get(0)[0][0]   +  " " + monthlyInput.get(1)[0][0] +  " "
-		//                    + monthlyInput.get(2)[0][0] +  " " + monthlyInput.get(3)[0][0] +  " " 
-		//		            + monthlyInput.get(3)[0][0] +  " " + monthlyInput.get(4)[0][0] +  " " 
-		//                    + monthlyInput.get(5)[0][0]);
-		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, int0, int1, year, month, cyclePlaceholder,
-				ave_type);
+	    int feasible = assessFeasible(gr, siteNDX, targetWQ);
+	    if (verbose) {
+	    	System.out.println("assessFeasible for location: "+location);
+	        if (feasible > 0)
+	            System.out.println("Year "+year+ " Month "+ month + " infeasible");
+	        else if (feasible < 0)
+	            System.out.println("Year "+year+ " Month "+ month + " always feasible");
+	        else
+	            System.out.println("Year "+year+ " Month "+ month + " sometimes feasible");
+	    }
+	    if (feasible < 0) { // always feasible case
+	        double[] alwaysFeasibleConstraint = {0., -1., 1.};
+	        return alwaysFeasibleConstraint[variable];
+	    } else if (feasible > 0) { // infeasible
+	        double[] neverFeasibleConstraint = {-(hiBound0 - loBound1), -1., 1.};
+	        return neverFeasibleConstraint[variable];
+	    }
 
-		GridResult gr;
-		double loBound0=4000; double hiBound0=22000; // Todo: coordinate
-		double loBound1=800.; double hiBound1=12800;
-		if (this.cachedGridResult.containsKey(rec)) {
-			gr = cachedGridResult.get(rec);
-		}else {
-			gr = sm.evaluateOnGrid(monthlyInput, year, month, loBound0, hiBound0, 4, loBound1, hiBound1, 3);
-			cachedGridResult.put(rec,gr);
-		}
+	    double[][] grad;
+	    if (cachedGradient.containsKey(rec)) {
+	        grad = cachedGradient.get(rec);
+	    	System.out.println("&-&-&-&-&-&-&-&- In Grad, Key recognized: " + rec.toString());
+	    	System.out.println("Retrieved gradient with dimensions "+grad.length+ " "+grad[0].length);
+	    } else {
+	        grad = linear.gradient(monthlyInput, year, month);
+	    	System.out.println("Generated gradient with dimensions "+grad.length+ " "+grad[0].length);	        
+	        cachedGradient.put(rec, grad);
+	    }
 
-		int feasible = assessFeasible(gr, siteNDX, targetWQ);  //TODO in early prototypes siteNDX should be 0
-		if (verbose) {
-			if (feasible > 0) {
-				System.out.println("Year "+year+ " Month "+ month + " infeasible ++++++++++++++++++");
-
-			}
-			if (feasible < 0) {
-				System.out.println("Year "+year+ " Month "+ month + " always  feasible ---------------");
-
-			}
-			if (feasible == 0) {
-				System.out.println("Year "+year+ " Month "+ month + " sometimes feasible ==============");
-			}
-		}
-		if (feasible < 0) { // return trivial values to indicate sac - exp > 0. using an < constraint
-			double[] alwaysFeasibleConstraint = {0.,-1.,1.};
-			return alwaysFeasibleConstraint[variable];
-		} else if(feasible > 0) { // return reasonable behavior for infeasible case sac - ex > X using a < constraint
-			double[] neverFeasibleConstraint = {-(hiBound0-loBound1),-1.,1.,};
-			return neverFeasibleConstraint[variable]; // TODO Move this to magic? 
-		}
-
-		if (cachedGradient.containsKey(rec)) {
-			int index = 0; // TODO indexForLocation
-			grad = cachedGradient.get(rec);
-
-		} else {
-			// Calculate and cache
-			grad = linear.gradient(monthlyInput, year, month);
-			cachedGradient.put(rec, grad); // Caches for next time
-
-		}
-
-		if(verbose) {
-			System.out.println("lineGenImpl grad");
-			System.out.println(grad[siteNDX][0]+" "+grad[siteNDX][1]+" "+grad[siteNDX][2]);
-			System.out.println("targetWQ");
-			System.out.println(targetWQ);
-			System.out.println("sac0");
-			System.out.println(sac0);
-			System.out.println("exp0");
-			System.out.println(exp0);
-		}
-		double[] constraint = linear.formulateConstraint(grad[siteNDX], sac0, exp0, targetWQ);
-
-		return constraint[variable];
-
+	    if (verbose) {
+	        System.out.println("lineGenImpl grad");
+	        System.out.println(grad[siteNDX][0] + " " + grad[siteNDX][1] + " " + grad[siteNDX][2]);
+	        System.out.println("targetWQ: " + targetWQ+" sac0: " + sac0+ " exp0: " + exp0);
+	    }
+	    double[] constraint = linear.formulateConstraint(grad[siteNDX], sac0, exp0, targetWQ);
+	    return constraint[variable];
 	}
+
 
 	/**
 	 * Evaluates the grid of surrogate outputs to assess overall feasibility relative to the target.
@@ -335,12 +288,10 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		for (int i=0; i< nx0; i++) {
 			for (int j=0; j<nx1; j++) {
 				double sac = gr.getGridInput0()[i];
-
 				double est = gr.getResult()[i][j][siteNdx];
 				if (est > targetWQ) { allNeg=false;}
 				else if (est < targetWQ) { allPos=false; }
 				if (! (allNeg || allPos)) return 0;  // truncate early if we already know the case is mixed
-
 			}
 		}
 		// TODO check sure not allPos and allNeg
@@ -375,7 +326,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		int maxLag = sizeInfo.maxSize;
 		int aveType = sm.getAgg().calsimCode;
 		String base = sm.getDailySurrogate().identifier() + SEP + context + SEP 
-				+ SEP + rec.year + SEP + rec.month + SEP + rec.cycle + SEP + aveType + SEP + failure + SEP + comment;
+				+ SEP + rec.getYear() + SEP + rec.getMonth() + SEP + aveType + SEP + failure + SEP + comment;
 		int nbatch = sizeInfo.batchLen;
 		int nvar = sizeInfo.nVar;
 		int[] nLag = sizeInfo.innerDim;
@@ -418,29 +369,32 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	}
 
 	public float annEC(ArrayList<double[][]> monthly, int location, int ave_type, double ave_thresh, int month, int year) {
-
-		SurrogateMonth sm = getSurrogateForSite(location, ave_type);
-		// TODO use actual cycle unless that is a bad idea
-		int cyclePlaceholder = 0; 
-		double sac0 = monthly.get(1)[0][0];         
-		double exp0 = monthly.get(2)[0][0];
-		int param_lookup = (int) ave_thresh;
-		RunRecord rec = new RunRecord(sm.getDailySurrogate(), sac0, exp0, 0, param_lookup, 
-				year, month, cyclePlaceholder,ave_type);
-		this.logInputs(sm, rec, monthly, false, "annEC",null);
-		// index within the surrogate output of the site of interest
-		int locIndex = this.getIndexForSite(location); //TODO this got hardwired to zero early on, is it fixed?
-
-		if (cachedSurrogate.containsKey(rec)) {
-			double[][] cached = cachedSurrogate.get(rec);
-			return (float) cached[0][locIndex]; // cachedSurrogate(rec,location); // TODO add index for variable
-		} else {
-			sm.getAgg().setThreshold(ave_thresh);
-			double[][] eval = sm.annMonth(monthly, year, month);
-			((HashMap<RunRecord, double[][]>) cachedSurrogate).put(rec, eval);
-			return (float) eval[0][locIndex];     // TODO lacks index for variable
-		}
+	    SurrogateMonth sm = getSurrogateForSite(location, ave_type);
+	    int cyclePlaceholder = 0;
+	    // Previously, sac0 and exp0 were extracted manually. Now we use the convenience constructor.
+	    // For annEC we set intInput0 = 0 (or use location if that is appropriate) and intInput1 = (int) ave_thresh.
+	    int int0 = 0; int int1=0;
+	    RunRecord rec = new RunRecord(sm.getDailySurrogate(), monthly, int0, int1, CACHE_REC_ANNEC,
+                year, month, cyclePlaceholder, ave_type);  
+	    this.logInputs(sm, rec, monthly, false, "annEC", null);
+	    
+	    int locIndex = this.getIndexForSite(location);
+	    System.out.println("annEC Location: "+location+" locIndex "+locIndex);
+	    if (cachedSurrogate.containsKey(rec)) {
+	        System.out.println("================= Surrogate cache found " + rec.toString());
+	        double[][] cached = cachedSurrogate.get(rec);
+	        System.out.println("Dimensions of cached " + cached.length + " " + cached[0].length);
+	        return (float) cached[0][locIndex];
+	    } else {
+	        System.out.println("Surrogate cache NOT found " + rec.toString());
+	        sm.getAgg().setThreshold(ave_thresh);
+	        double[][] eval = sm.annMonth(monthly, year, month);
+	        System.out.println("Caching with dimensions of eval " + eval.length + " " + eval[0].length);
+	        cachedSurrogate.put(rec, eval);
+	        return (float) eval[0][locIndex];
+	    }
 	}
+
 
 	/**
 	 * Given historical input, location find the required Sacramento flow to meet 
@@ -467,54 +421,51 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 
 
 
-
-	/**
-	 * Given historical input, location find the required Sacramento flow to meet 
-	 * a salinity or EC Target if such a value lies between sacLoBound and sacHiBound.
-	 * Currently there is no attempt at caching here. 
-	 * @param target EC Target
-	 * @param monthlyInputs Monthly inputs. Current period Sac can be junk -- it is not used
-	 * @param flowLoBound Lower bound for search
-	 * @param flowHiBound Upper bound for search
-	 * @param location Location where target is to be met
-	 * @param ave_type averaging used
-	 * @param month calendar month
-	 * @param year calendar year
-	 * @returns Required flow. If required flow is above sacHiBound, returns a number above sacHiBound. 
-	 * If required flow is below sacLoBound, returns a number below sacLoBound. Currently +/- 999999.
-	 */
 	public float requiredFlow(double target, ArrayList<double[][]> monthlyInputs, 
-			double flowLoBound, double flowHiBound, int location,
-			int ave_type, int month, int year, double nth) {
+	        double flowLoBound, double flowHiBound, int location,
+	        int ave_type, int month, int year, double nth) {
 
-		//if (location != this.X2_CALSIM)) {
-		//	throw new IllegalArgumentException("")
-		//}
+	    SurrogateMonth sm = getSurrogateForSite(location, ave_type);
+	    if (ave_type == AggregateMonths.NTH_SMALLEST.calsimCode) {
+	        sm.getAgg().setN((int) nth);
+	        System.out.println("requiredFlow data dump");
+	        DataDumper dumper = new DataDumper();
+	        dumper.dumpInputs(monthlyInputs);
+	    }
 
-		SurrogateMonth sm = getSurrogateForSite(location,ave_type);
-		if (ave_type == AggregateMonths.NTH_SMALLEST.calsimCode) {
-			sm.getAgg().setN((int) nth);
-			System.out.println("requiredFlow data dump");
-			DataDumper dumper = new DataDumper();
-			dumper.dumpInputs(monthlyInputs);
-		}
+	    int cyclePlaceholder = 0; // placeholder cycle
+	    int intInput0 = location;   // use location here
+	    int intInput1 = (ave_type == AggregateMonths.NTH_SMALLEST.calsimCode ? (int) nth : 0);
+	    // For requiredFlow we need to override the flow being inferred (Sac).
+	    // Assume that the Sacramento flow is at feature index 1.
+	    double[] features = RunRecord.extractLatestFeatures(monthlyInputs);
+	    features[0] = 0.0; // override Sacramento flow with zero
 
+	    // Set the context field to indicate requiredFlow caching.
+	    RunRecord rec = new RunRecord(sm.getDailySurrogate(), features, intInput0, intInput1, CACHE_REC_REQFLOW_BASE,
+	                                  year, month, cyclePlaceholder, ave_type);
 
-		InverseSurrogateMonth ism = new InverseSurrogateMonth(sm);
-		int flowIndex=0;
-		// TODO location was hardwired and code isn't checked for cases where flowIndex != 0
-		double req = ism.invert(target, monthlyInputs, flowIndex, flowLoBound, flowHiBound, 
-				year, month, location);
+	    if (cachedRequiredFlow.containsKey(rec)) {
+	        System.out.println("Required flow cache found: " + rec.toString());
+	        float fReq = cachedRequiredFlow.get(rec);
+	        System.out.println("Value for location "+location + " is "+fReq);
+            return fReq;
+	    } else {
+	        System.out.println("Required flow cache NOT found: " + rec.toString());
+	    }
 
-		if (req > flowHiBound) {
-			// Salinity target was not feasible
-			req =  999999.;
-		}
-		if (req< flowLoBound) {
-			req = -999999.;
-		}
-		return (float) req;
-	}	
+	    InverseSurrogateMonth ism = new InverseSurrogateMonth(sm);
+	    int flowIndex = 0;
+	    double req = ism.invert(target, monthlyInputs, flowIndex, flowLoBound, flowHiBound, 
+	                              year, month, location);
+	    if (req > flowHiBound) req = 999999.;
+	    if (req < flowLoBound) req = -999999.;
+	    float fReq = (float) req;
+	    cachedRequiredFlow.put(rec, fReq);
+	    System.out.println("Calcualted as " + fReq);
+	    return fReq;
+	}
+
 
 
 	//TODO: there are a lot of "placeholderCycles that need to be replaced

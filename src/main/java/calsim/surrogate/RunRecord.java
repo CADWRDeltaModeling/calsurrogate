@@ -4,99 +4,152 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
-/**
- * Class used to produce a hash key for surrogate evaluations. It tracks the
- * year and month and cycle as well as a couple pieces of input data such as the
- * most recent Sac and Export flow.
- */
 public class RunRecord {
 
-	int year;
-	int month;
-	int cycle;
-	int[] hashBatch = { 0 };
-	int[] hashIndex = { 0, 1 };
-	int[] hashFeatures = { 0 };
-	private double floatInput0;
-	private double floatInput1;
-	private int intInput0;
-	private int intInput1;
-	private int aveType;
-	private Surrogate surrogate;
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + year;
-		result = prime * result + month;
-		result = prime * result + cycle;
-		result = prime * result + intInput0;
-		result = prime * result + intInput1;
-		result = prime * result + aveType;
-		result = prime * result + Double.hashCode(floatInput0);
-		result = prime * result + Double.hashCode(floatInput1);
-		return result;
+	private int year;
+    private int month;
+    private int cycle;
+    // Array of most recent feature values (from batch 0)
+    private double[] floatInputs;
+    // Context-specific integer (e.g., from static codes in SalinitySurrogateManager)
+    private int intContext;
+    // Additional context integers: intInput0 is for location (or 0 if not location-specific),
+    // intInput1 for other context such as nbatch/nth.
+    private int intInput0;
+    private int intInput1;
+    private int aveType;
+    private Surrogate surrogate;
+
+    /**
+     * Primary constructor.
+     *
+     * @param surrogate    The surrogate model. Its getNFeatures() will be used to check the inputs.
+     * @param floatInputs  Array of the most recent feature values.
+     * @param intInput0    Typically stores location (or zero if not location-specific).
+     * @param intInput1    Additional context (such as nbatch/nth).
+     * @param intContext   Context-specific code (from static codes).
+     * @param year         Year of evaluation.
+     * @param month        Month of evaluation.
+     * @param cycle        Cycle (will be zero for now).
+     * @param aveType      Averaging type.
+     * @throws IllegalArgumentException if floatInputs length does not match surrogate.getNFeatures().
+     */
+    public RunRecord(Surrogate surrogate, double[] floatInputs, int intInput0, int intInput1, int intContext,
+                     int year, int month, int cycle, int aveType) {
+        this.surrogate = surrogate;
+        if (surrogate != null && floatInputs.length != surrogate.getNFeatures()) {
+            throw new IllegalArgumentException("Mismatch: input features (" + floatInputs.length 
+                    + ") vs surrogate expected (" + surrogate.getNFeatures() + ").");
+        }
+        this.floatInputs = floatInputs;
+        this.intInput0 = intInput0;
+        this.intInput1 = intInput1;
+        this.intContext = intContext;
+        this.year = year;
+        this.month = month;
+        this.cycle = cycle;
+        this.aveType = aveType;
+    }
+
+    /**
+     * Convenience constructor that accepts an ArrayList of double[][] and extracts the latest feature values.
+     *
+     * @param surrogate    The surrogate model.
+     * @param inputs       ArrayList of double[][], one per feature.
+     * @param intInput0    Typically stores location (or zero if not location-specific).
+     * @param intInput1    Additional context (such as nbatch/nth).
+     * @param intContext   Context-specific code.
+     * @param year         Year of evaluation.
+     * @param month        Month of evaluation.
+     * @param cycle        Cycle (will be zero for now).
+     * @param aveType      Averaging type.
+     */
+    public RunRecord(Surrogate surrogate, ArrayList<double[][]> inputs, int intInput0, int intInput1, int intContext,
+                     int year, int month, int cycle, int aveType) {
+        this(surrogate, extractLatestFeatures(inputs), intInput0, intInput1, intContext, year, month, cycle, aveType);
+    }
+
+    /**
+     * Static helper to extract the most recent feature values from an ArrayList of double[][].
+     * Each element of the list represents one feature with shape [nbatch][nhist]; the method returns
+     * the [0][0] entry (most recent) for each feature.
+     *
+     * @param inputs ArrayList of double[][].
+     * @return double[] array of latest feature values.
+     * @throws IllegalArgumentException if any input is null or empty.
+     */
+    public static double[] extractLatestFeatures(ArrayList<double[][]> inputs) {
+        if (inputs == null || inputs.isEmpty()) {
+            return new double[0];
+        }
+        double[] features = new double[inputs.size()];
+        for (int i = 0; i < inputs.size(); i++) {
+            double[][] data = inputs.get(i);
+            if (data == null || data.length == 0 || data[0].length == 0) {
+                throw new IllegalArgumentException("Input for feature " + i + " is empty or null.");
+            }
+            features[i] = data[0][0];
+        }
+        return features;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + year;
+        result = prime * result + month;
+        result = prime * result + cycle;
+        result = prime * result + intContext;
+        result = prime * result + intInput0;
+        result = prime * result + intInput1;
+        result = prime * result + aveType;
+        result = prime * result + Arrays.hashCode(floatInputs);
+        result = prime * result + (surrogate == null ? 0 : surrogate.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+         if (this == obj)
+             return true;
+         if (obj == null || getClass() != obj.getClass())
+             return false;
+         RunRecord other = (RunRecord) obj;
+         return year == other.year &&
+                month == other.month &&
+                cycle == other.cycle &&
+                intContext == other.intContext &&
+                intInput0 == other.intInput0 &&
+                intInput1 == other.intInput1 &&
+                aveType == other.aveType &&
+                Arrays.equals(floatInputs, other.floatInputs) &&
+                Objects.equals(surrogate, other.surrogate);
+    }
+
+    @Override
+    public String toString() {
+         String surrogateStr = (surrogate != null) ? surrogate.toString() : "null";
+         return "RunRecord[" +
+                "year=" + year +
+                ", month=" + month +
+                ", cycle=" + cycle +
+                ", intContext=" + intContext +
+                ", intInput0=" + intInput0 +
+                ", intInput1=" + intInput1 +
+                ", aveType=" + aveType +
+                ", floatInputs=" + Arrays.toString(floatInputs) +
+                ", surrogate=" + surrogateStr +
+                "]";
+    }
+    
+    public int getYear() {
+		return year;
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		RunRecord other = (RunRecord) obj;
-		return cycle == other.cycle
-				&& Double.doubleToLongBits(floatInput0) == Double.doubleToLongBits(other.floatInput0)
-				&& Double.doubleToLongBits(floatInput1) == Double.doubleToLongBits(other.floatInput1)
-				&& intInput0 == other.intInput0 && intInput1 == other.intInput1 && aveType == other.aveType
-				&& month == other.month && Objects.equals(surrogate, other.surrogate) && year == other.year;
+	public int getMonth() {
+		return month;
 	}
-
-	/**
-	 * Used to hash and retrieve run results
-	 * @param surrogate
-	 * @param float0
-	 * @param float1
-	 * @param int0
-	 * @param int1
-	 * @param year
-	 * @param month
-	 * @param cycle
-	 * @param aveType
-	 */
-	public RunRecord(Surrogate surrogate, double float0, double float1, int int0, int int1, int year, int month,
-			int cycle, int aveType) {
-		this.floatInput0 = float0;
-		this.floatInput1 = float1;
-		this.intInput0 = int0;
-		this.intInput1 = int1;
-		this.year = year;
-		this.month = month;
-		this.cycle = cycle;
-		this.aveType = aveType;
-		this.surrogate = surrogate;
-
-	}
-
-	public static void main(String[] argv) {
-		double x0 = 1.;
-		double x1 = 2.;
-		double x2 = 1.;
-		double x3 = 2.;
-
-		Surrogate surrogate = new MockSurrogate(118);
-
-		RunRecord r0 = new RunRecord(surrogate, x0, x1, 0, 0, 2001, 2, 15, 1);
-		System.out.println(r0.hashCode());
-
-		RunRecord r1 = new RunRecord(surrogate, x2, x3, 0, 0, 2001, 2, 15, 1);
-		System.out.println(r1.hashCode());
-
-		boolean same = (r0.equals(r1));
-		System.out.println(same);
-
-	}
+    
 }

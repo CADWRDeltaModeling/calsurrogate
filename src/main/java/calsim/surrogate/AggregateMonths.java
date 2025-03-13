@@ -98,6 +98,8 @@ public enum AggregateMonths {
 			int stopIndex = firstMonthIndex + endDayOfMonth;
 
 			double max = -9999;
+			startIndex = 0;
+			stopIndex = endDayOfMonth;			
 			for (int i = startIndex; i < stopIndex; i++) {
 				if (daily[i] > max)
 					max = daily[i];
@@ -105,6 +107,39 @@ public enum AggregateMonths {
 			return max;
 		}
 	},
+
+	/**
+	 * Computes a 14-day backward-looking running average then takes the max of
+	 * those. Currently doesn't really do that because the 4-month history will not
+	 * allow enough days to compute a 14-day running average near the first of the
+	 * month, so this one starts on day 14. That matches how the problem is handled
+	 * in previous versions of CalSIM
+	 */
+	MONTHLY_MAX_14D_TRUNCATED(6,"max 14-day running average starting day 14") {
+		@Override
+		public double aggregate(double[] daily, int firstMonthIndex, int startDayOfMonth, int endDayOfMonth) {
+
+			int startIndex = firstMonthIndex + startDayOfMonth - 1;
+			int stopIndex = firstMonthIndex + endDayOfMonth;
+			int TRUNCATION = 14;
+
+			double max = -9999;
+			startIndex = 0;  //TODO hardwired ... something is wrong here about indexes
+			stopIndex = endDayOfMonth;
+			//System.out.println("max");
+			for (int iday = (startIndex+TRUNCATION); iday < stopIndex; iday++) {
+				double ave14 = 0.; 
+				//System.out.println("iday "+iday+" val "+daily[iday]);
+				for (int j = iday - 14 + 1; j <= iday; j++) {
+					ave14 += daily[j];
+				}
+				ave14 /= 14.;
+				if (ave14 > max)
+					max = ave14;
+			}
+			return max;
+		}
+	},	
 	/**
 	 * Computes the maximum of a 14-day backward-looking running average over the specified period.
 	 *

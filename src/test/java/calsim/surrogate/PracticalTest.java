@@ -11,12 +11,12 @@ import org.junit.jupiter.api.Test;
 
 import calsim.surrogate.examples.ExampleExogAssignment;
 
-@Disabled // This test is disabled for now because it requires a rock_slough model
+//@Disabled // This test is disabled for now because it requires a rock_slough model
 class PracticalTest {
 
 	@Test
-	void test() {
-		String fname = "./ann_calsim-main/rock_slough";
+	void testUnivariate() {
+		String fname = "F:/ann_workspace/calsurrogate/src/main/resources/calsim/surrogate/ann/emmaton";
 		
 		
 		SurrogateMonth annMonth = createSurrogateMonth(fname); //new SurrogateMonth(disagg, mock, agg);
@@ -57,6 +57,7 @@ class PracticalTest {
 				System.out.println("x0="+grid.getGridInput0()[i]+" x1="+grid.getGridInput1()[j]+" res="+grid.getResult()[i][j][0]);			
 			}
 		}
+		System.out.println("Done");
 	}
 	
     	public Surrogate getTFModel(String fname) {

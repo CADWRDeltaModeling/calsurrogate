@@ -29,9 +29,13 @@ public abstract class BrentSolver implements LineSearchable {
 	public final double LOW = -1.;
 	private double resultSign = 0.;
 
-	private double absoluteAccuracy = 1e-6;
-	private double relativeAccuracy = 1e-5;
-	private double functionAccuracy = 1.e-4;
+	//private double absoluteAccuracy = 1e-6;
+	//private double relativeAccuracy = 1e-5;
+	//private double functionAccuracy = 1.e-4;
+
+	private double absoluteAccuracy = 1e-3;
+	private double relativeAccuracy = 1e-2;
+	private double functionAccuracy = 1.e-1;	
 
 	private final boolean verbose=false;
 	

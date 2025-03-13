@@ -12,11 +12,12 @@ public enum ExampleExogAssignment {
      * Exogenous assignment for tide.
      * File name: "sf_tide.csv"
      * File column: "sf_tidal_range"
-     * ANN input: "tide"
+     * ANN input: "tide"F:\ann_workspace\calsurrogate\src\main\resources\calsim\surrogate\sf_tide.csv
      */
-    TIDE("calsim/surrogate/sf_tide.csv", "sf_tidal_range", "serving_default_tide_input:0");
-
-    private final ExogTimeSeriesAssignment assignment;
+    //TIDE("calsim/surrogate/sf_tide.csv", "sf_tidal_range", "serving_default_tide:0");
+    TIDE("F:\\ann_workspace\\calsurrogate\\src\\main\\resources\\calsim\\surrogate\\sf_tide.csv", "sf_tidal_range", "serving_default_tide:0");
+    
+	private final ExogTimeSeriesAssignment assignment;
 
     private ExampleExogAssignment(String fileName, String fileColumn, String annInputName) {
         this.assignment = new ExogTimeSeriesAssignment(fileName, fileColumn, annInputName);

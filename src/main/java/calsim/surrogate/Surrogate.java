@@ -54,6 +54,10 @@ public interface Surrogate extends DailyToSurrogate {
     }	
 	public DailyToSurrogate getDailyToSurrogate();
 	
-	
+    /**
+     * Returns the expected number of features (i.e. the length of the float inputs ArrayList)
+     * that this surrogate requires.
+     */
+    int getNFeatures();	
 
 }
