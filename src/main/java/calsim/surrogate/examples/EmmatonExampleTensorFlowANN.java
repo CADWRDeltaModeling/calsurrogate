@@ -1,6 +1,9 @@
 package calsim.surrogate.examples;
 
 import calsim.surrogate.*;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -10,10 +13,25 @@ import calsim.surrogate.*;
 public class EmmatonExampleTensorFlowANN {
 
 	public static Surrogate emmatonANN() {
-		String fname = "./ann_calsim-main/emmaton";
-		String[] tensorNames = { "serving_default_sac_input:0", "serving_default_exports_input:0",
-				"serving_default_dcc_input:0", "serving_default_net_dcd_input:0", "serving_default_sjr_input:0",
-				"serving_default_tide_input:0", "serving_default_smscg_input:0", };
+		
+		File modelFolder;
+		String modelPath;
+		try {
+			modelFolder = ResourceUtils.extractResourceFolder("/calsim/surrogate/ann/emmaton");
+			modelPath = modelFolder.getAbsolutePath();
+		} catch (IOException e) {
+			e.printStackTrace();
+			modelFolder = null;
+			modelPath = null;
+		}		
+		String fname = modelPath;
+		String[] tensorNames = { "serving_default_sac:0", 
+				"serving_default_exports:0",
+				"serving_default_dcc:0", 
+				"serving_default_net_dcd:0", 
+				"serving_default_sjr:0",
+				"serving_default_tide:0", 
+				"serving_default_smscg:0", };
 
 		String[] tensorNamesInt = new String[0];
 		String outName = "StatefulPartitionedCall:0";
