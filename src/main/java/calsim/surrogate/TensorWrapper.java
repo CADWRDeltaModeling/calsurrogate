@@ -93,13 +93,13 @@ public class TensorWrapper implements Surrogate {
 					featureData[k][j] = (float) rawData.get(i)[k][j];
 				}
 			}
-			String filename = DebugUtils.getShortName(tensorNames[i]);
-			try {
-				DebugUtils.logInputCSV(filename, featureData);
-			} catch (IOException e) {
+			//String filename = DebugUtils.getShortName(tensorNames[i]);
+			//try {
+			//	DebugUtils.logInputCSV(filename, featureData);
+			//} catch (IOException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			//	e.printStackTrace();
+			//}
 			
 			//if (i < 2) {this.checkDifferencesAcrossBatches(featureData, i);}
 			System.out.println("Feeding tensor: " + tensorNames[i] + " with shape [" 
