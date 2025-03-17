@@ -2,24 +2,33 @@ package calsim.surrogate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import calsim.surrogate.examples.ExampleExogAssignment;
 
-//@Disabled // This test is disabled for now because it requires a rock_slough model
 class PracticalTest {
 
 	@Test
-	void testUnivariate() {
-		String fname = "F:/ann_workspace/calsurrogate/src/main/resources/calsim/surrogate/ann/emmaton";
-		
-		
-		SurrogateMonth annMonth = createSurrogateMonth(fname); //new SurrogateMonth(disagg, mock, agg);
+	void testUnivariate() throws URISyntaxException {
+
+
+		URL resourceUrl = getClass().getClassLoader().getResource("calsim/surrogate/ann/emmaton");
+
+		assertNotNull(resourceUrl, "Resource not found");
+
+		// Convert to Path
+		Path resourcePath = Paths.get(resourceUrl.toURI());
+
+		String fname = resourcePath.toString();
+		SurrogateMonth annMonth = createSurrogateMonth(fname);
 
 		double[][] sac = { { 14765.289427181004,13478.35135024262,36344.084703109846,49641.401116570276,21677.466640999544 } };
 		double[][] exp = { { 11985.391312255339,12301.106028028918,9106.153016670627,7070.969778570741,5572.729092403552} };
@@ -28,7 +37,7 @@ class PracticalTest {
 		double[][] sjr = { { 2442.5400684029796,3998.709350903452,8062.840526488872,6325.312129502397,9512.362226873918 } };
 		double[][] tide = { { 6.56,6.184,5.508,5.083,6.913 } };
 		double[][] smsg = { { 0.0,0.0,1.0,1.0,1.0 } };
-		ArrayList<double[][]> floatInput = new ArrayList<double[][]>();
+		ArrayList<double[][]> floatInput = new ArrayList<>();
 		floatInput.add(sac);
 		floatInput.add(exp);
 		floatInput.add(dcc);
@@ -61,7 +70,7 @@ class PracticalTest {
 	}
 	
     	public Surrogate getTFModel(String fname) {
-			//String fname = "./ann_calsim-main/emmaton";
+
 			String[] tensorNames = { "serving_default_sac:0", "serving_default_exports:0",
 					"serving_default_dcc:0", "serving_default_net_dcd:0", "serving_default_sjr:0",
 					"serving_default_tide:0", "serving_default_smscg:0", };
@@ -69,8 +78,7 @@ class PracticalTest {
 			String[] tensorNamesInt = new String[0];
 			String outName = "StatefulPartitionedCall:0";
 			DailyToSurrogate dayToANN = new DailyToSurrogateBlocked(8, 10, 11);
-			Surrogate wrap = new TensorWrapper(fname, tensorNames, tensorNamesInt, outName, dayToANN);
-			return wrap;
+            return new TensorWrapper(fname, tensorNames, tensorNamesInt, outName, dayToANN);
 		}
 
 		/**
@@ -80,10 +88,7 @@ class PracticalTest {
 		 * re-aggregates to an array over the batch size with one monthly statistic per
 		 * batch
 		 * 
-		 * @param monthlyInputs
-		 * @param year
-		 * @param month
-		 * @param cycle
+		 * @param fname filename
 		 * @return 2D Array of monthly aggregated results with dimensions of batch size
 		 *         by number of stations predicted
 		 */
@@ -96,9 +101,8 @@ class PracticalTest {
 			DisaggregateMonths[] disagg = { repeat, repeat, daysOps, spline, spline, spline, repeat };
 
 			AggregateMonths agg = AggregateMonths.MONTHLY_MEAN;
-			List<ExogTimeSeriesAssignment> assigns = Arrays.asList(ExampleExogAssignment.TIDE.getAssignment());
-			SurrogateMonth month = new SurrogateMonth(disagg, ann, agg, assigns);
-			return month;
+			List<ExogTimeSeriesAssignment> assigns = Collections.singletonList(ExampleExogAssignment.TIDE.getAssignment());
+            return new SurrogateMonth(disagg, ann, agg, assigns);
 		}
 
 
