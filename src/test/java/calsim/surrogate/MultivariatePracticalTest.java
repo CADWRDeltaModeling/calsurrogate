@@ -36,6 +36,7 @@ class MultivariatePracticalTest {
 		try {
 			modelFolder = ResourceUtils.extractResourceFolder("/calsim/surrogate/ann/schism_base.suisun_gru2_tf");
 			modelPath = modelFolder.getAbsolutePath();
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 			modelFolder = null;
@@ -98,7 +99,7 @@ class MultivariatePracticalTest {
 				"serving_default_smscg:0", };
 
 		String[] tensorNamesInt = new String[0];
-		String outName = "StatefulPartitionedCall:1";
+		String outName = "StatefulPartitionedCall:2";
 		boolean reverse = false;
 		DailyToSurrogate dayToANN = new DailyToSurrogateDefault(90,reverse);
 		Surrogate wrap = new TensorWrapper(fname, tensorNames, tensorNamesInt, outName, dayToANN);
