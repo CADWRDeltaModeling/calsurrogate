@@ -49,7 +49,8 @@ public class TensorWrapper implements Surrogate {
 	 *                       inputs
 	 * @param outName        name of the output to be querieds
 	 */
-	public TensorWrapper(String fpath, String[] tensorNames, String[] tensorNamesInt, String outName,
+	public TensorWrapper(String fpath, String[] tensorNames, 
+			String[] tensorNamesInt, String outName,
 			DailyToSurrogate dayToSurrogate) {
 		model = SavedModelBundle.load(fpath, "serve");
 		s = model.session();
@@ -93,15 +94,6 @@ public class TensorWrapper implements Surrogate {
 					featureData[k][j] = (float) rawData.get(i)[k][j];
 				}
 			}
-			//String filename = DebugUtils.getShortName(tensorNames[i]);
-			//try {
-			//	DebugUtils.logInputCSV(filename, featureData);
-			//} catch (IOException e) {
-				// TODO Auto-generated catch block
-			//	e.printStackTrace();
-			//}
-			
-			//if (i < 2) {this.checkDifferencesAcrossBatches(featureData, i);}
 			System.out.println("Feeding tensor: " + tensorNames[i] + " with shape [" 
 					+ featureData.length + ", " + featureData[0].length + "]");
 
@@ -123,15 +115,10 @@ public class TensorWrapper implements Surrogate {
 			outputTensor.copyTo(out);
 
 			//TODO This hardwires flooring to zero. Should eliminate and put this in TensorFlow
-			double xLowBound = 30.; //Small enough to be a floor for X2 and for EC
+			double xLowBound = 0.; //Small enough to be a floor for X2 and for EC
 			for (int i = 0; i < out.length; i++) {
 				for (int j = 0; j < out[i].length; j++) {
 					out[i][j] = (float) Math.max(xLowBound, out[i][j]);
-					if (i==0) {
-						System.out.println("out 0: i="+i+" j="+j +" output=" +out[i][0]);}
-					if (j==5) {
-						System.out.println("out 5: i=" +i+ " j=" +j+ " output=" +out[i][5]); 
-					}
 				}
 			}	
 			return out;

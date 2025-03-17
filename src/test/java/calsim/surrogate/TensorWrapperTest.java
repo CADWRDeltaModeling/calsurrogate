@@ -19,10 +19,17 @@ public class TensorWrapperTest {
     	String dataPath = dataFolder.getAbsolutePath();
     	
     	
-    	File modelFolder = ResourceUtils.extractResourceFolder("/calsim/surrogate/ann/schism_base.suisun_gru2_tf");
-    	String modelPath = modelFolder.getAbsolutePath();
-
+    	File modelFolder = ResourceUtils.extractResourceFolder(
+    	"/calsim/surrogate/ann/schism_base.suisun_gru2_tf2");
+    	String modelPath = dataFolder.getAbsolutePath();
     	
+    	
+    	// Produced without unscaling by h5_tf
+    	//File modelFolder = ResourceUtils.extractResourceFolder(
+    	//		"F:/ann_workspace/casanntra/example/base.suisun_debug");
+    	//String modelPath = "F:/ann_workspace/casanntra/example/base.suisun_debug";
+
+    	System.out.println(modelPath);
         //String modelPath = "F:/ann_workspace/calsurrogate/src/main/resources/calsim/surrogate/ann/schism_base.suisun_gru2_tf";    
         String[] tensorNames = { "serving_default_northern_flow:0", 
         		                 "serving_default_exports:0", 
@@ -34,7 +41,7 @@ public class TensorWrapperTest {
         		                 "serving_default_smscg:0"};
         
         String[] tensorNamesInt = {};  // Assume no integer inputs for this test.
-        String outName = "StatefulPartitionedCall:0";
+        String outName = "StatefulPartitionedCall:2";
         DailyToSurrogate dummyDaily = new DailyToSurrogateDefault(90,false);
 
         // Instantiate TensorWrapper.
@@ -42,7 +49,8 @@ public class TensorWrapperTest {
         		tensorNames, tensorNamesInt, outName, dummyDaily);
 
         // --- Load cached CSV inputs ---
-        ArrayList<double[][]> rawData = DebugUtils.readInputFeatures(Arrays.asList(tensorNames),dataPath);
+        ArrayList<double[][]> rawData = DebugUtils.readInputFeatures(
+        		Arrays.asList(tensorNames),dataPath);
         System.out.println("Read "+rawData.size()
                            + " features. nbatch="
         		           + rawData.get(0).length
@@ -50,7 +58,7 @@ public class TensorWrapperTest {
         		           + rawData.get(0)[0].length);
         
         // Optionally limit the number of rows if there are many.
-        int maxRows = 10;
+        int maxRows = 12;
         ArrayList<double[][]> limitedRawData = new ArrayList<>();
         for (double[][] feature : rawData) {
             int rows = Math.min(feature.length, maxRows);
@@ -75,7 +83,7 @@ public class TensorWrapperTest {
                 }
             }
         }
-        //assertTrue(diffBetweenBatch0and1, "Multi-batch output should differ between batch 0 and batch 1");
+        assertTrue(diffBetweenBatch0and1, "Multi-batch output should differ between batch 0 and batch 1");
 
         // --- Run model with a single-batch call using only the first row (as done earlier) ---
         ArrayList<double[][]> singleBatchData = new ArrayList<>();
