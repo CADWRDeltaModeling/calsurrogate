@@ -64,13 +64,8 @@ class SurrogateIdentifier {
 public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	INSTANCE;
 
-	/*
-	 * 1 = Jersey Point 2 = Contra Costa - Rock Slough 3 = Emmaton 4 = Antioch 5 =
-	 * Collinsville 6 = Chipps Island 7 = Los Vaqueros Intake 8 = Middle River 9 =
-	 * Victoria Intake 10 = CVP Intake 11 = CCFB 12 = CCFB Intake 20 = Beldon 21 =
-	 * Martinez }
-	 */
-	// Only Emmaton in prototype
+	/* CalSim Location Codes. Must be coordinated with reverse map below
+	*/
 	public static final int JER_CALSIM = 1; // Jersey Point
 	public static final int RSL_CALSIM = 2; // Rock Slough
 	public static final int EMM_CALSIM = 3; // Emmaton
@@ -86,8 +81,33 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	public static final int BDL_CALSIM = 20; // Beldons Landing
 	public static final int MRZ_CALSIM = 21; // Martinez
 	public static final int X2_CALSIM =  30; // X2
+     
+	// Must be coordinated with the above constants
+    public static final Map<Integer, String> LOCATION_MAP = new HashMap<>();
 
+    static {
+        LOCATION_MAP.put(JER_CALSIM, "JER");
+        LOCATION_MAP.put(RSL_CALSIM, "RSL");
+        LOCATION_MAP.put(EMM_CALSIM, "EMM");
+        LOCATION_MAP.put(ANH_CALSIM, "ANH");
+        LOCATION_MAP.put(CLL_CALSIM, "CLL");
+        LOCATION_MAP.put(MAL_CALSIM, "MAL");
+        LOCATION_MAP.put(LVR_CALSIM, "LVR");
+        LOCATION_MAP.put(MDR_CALSIM, "MDR");
+        LOCATION_MAP.put(VIC_CALSIM, "VIC");
+        LOCATION_MAP.put(TRP_CALSIM, "TRP");
+        LOCATION_MAP.put(CCF_CALSIM, "CCF");
+        LOCATION_MAP.put(CCI_CALSIM, "CCI");
+        LOCATION_MAP.put(BDL_CALSIM, "BDL");
+        LOCATION_MAP.put(MRZ_CALSIM, "MRZ");
+        LOCATION_MAP.put(X2_CALSIM, "X2");
+    }
 
+    public static String getLocationCode(int locationId) {
+        return LOCATION_MAP.getOrDefault(locationId, "UNKNOWN");
+    }	
+	
+    // Constants associated with calling context
 	public static final int CACHE_REC_LINEGEN = 1392;
 	public static final int CACHE_REC_GRID  = 1592;
 	public static final int CACHE_REC_GRADIENT = 1792;
@@ -200,8 +220,36 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	}
 
 
-
-
+	/**
+	 * Generates a linear constraint for Sacramento (`Qsac`) and Export (`Qexp`) flows 
+	 * to enforce a salinity water quality objective at a given location. The method 
+	 * first determines whether the salinity constraint is always feasible, never feasible, 
+	 * or sometimes feasible, and constructs a linear constraint accordingly.
+	 * 
+	 * <p>The procedure follows these steps:
+	 * <ul>
+	 *   <li>Uses a cached or newly computed grid evaluation to assess feasibility over a range of `Qsac` and `Qexp` values.</li>
+	 *   <li>If the constraint is always feasible, a default constraint of `{0, -1, 1}` is returned.</li>
+	 *   <li>If the constraint is never feasible, a default constraint of `{-(hiBound0 - loBound1), -1, 1}` is returned.</li>
+	 *   <li>If feasibility is mixed, a gradient-based linear constraint is computed.</li>
+	 *   <li>The computed constraint is returned as an array: `{rhs, sacCoef, expCoef}`.</li>
+	 * </ul>
+	 * 
+	 * <p>The function leverages caching where possible to avoid redundant surrogate model evaluations.
+	 * 
+	 * @param monthlyInput  A list of input matrices for the surrogate model, indexed by features.
+	 *                      Each entry is a `double[][]` where the first dimension is the batch index
+	 *                      and the second dimension is the time lag.
+	 * @param location      The location index where the constraint is being applied.
+	 * @param variable      The index of the coefficient to return (0 for `rhs`, 1 for `sacCoef`, 2 for `expCoef`).
+	 * @param ave_type      The averaging method used for salinity compliance.
+	 * @param month         The month in which the constraint is being generated.
+	 * @param year          The year in which the constraint is being generated.
+	 * @param sac0          The nominal Sacramento flow (`Qsac_0`) at which the constraint is linearized.
+	 * @param exp0          The nominal Export flow (`Qexp_0`) at which the constraint is linearized.
+	 * @param targetWQ      The salinity water quality target that the constraint must enforce.
+	 * @return The requested coefficient of the linear constraint (`rhs`, `sacCoef`, or `expCoef`).
+	 */
 	public double lineGenImpl(ArrayList<double[][]> monthlyInput, int location, int variable, 
 	        int ave_type, int month, int year, double sac0, double exp0, double targetWQ) {
 	    boolean verbose = true;
@@ -233,7 +281,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 
 	    int feasible = assessFeasible(gr, siteNDX, targetWQ);
 	    if (verbose) {
-	    	System.out.println("assessFeasible for location: "+location);
+	    	System.out.println("assessFeasible for location: "+this.getIndexForSite(location)+" ("+location+")");
 	        if (feasible > 0)
 	            System.out.println("Year "+year+ " Month "+ month + " infeasible");
 	        else if (feasible < 0)
@@ -252,7 +300,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	    double[][] grad;
 	    if (cachedGradient.containsKey(rec)) {
 	        grad = cachedGradient.get(rec);
-	    	System.out.println("&-&-&-&-&-&-&-&- In Grad, Key recognized: " + rec.toString());
+	    	System.out.println("&-&-&-&-&-&-&f-&- In Grad, Key recognized: " + rec.toString());
 	    	System.out.println("Retrieved gradient with dimensions "+grad.length+ " "+grad[0].length);
 	    } else {
 	        grad = linear.gradient(monthlyInput, year, month);
@@ -415,8 +463,11 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 			double flowLoBound, double flowHiBound, int location,
 			int ave_type, int month, int year) {
 
-		return requiredFlow(target, monthlyInputs,
+		float req = requiredFlow(target, monthlyInputs,
 				flowLoBound, flowHiBound, location, ave_type, month, year, 0.);
+	    System.out.println("Required flow for station: "
+				 +this.getLocationCode(location)+"("+location+")");
+	    return req; 
 	}
 
 
