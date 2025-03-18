@@ -42,7 +42,7 @@ public class GridResult {
         double[][][] res = getResult();  // 3D array: [i][j][stationIndex]
         
         // Choose the output index for display; for example, site index 0.
-        int siteIndex = 0;
+        int siteIndex = 8;
         
         // Iterate over all combinations of x0 and x1.
         for (int i = 0; i < x0.length; i++) {

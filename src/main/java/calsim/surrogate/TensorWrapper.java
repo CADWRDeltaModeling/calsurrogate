@@ -94,8 +94,6 @@ public class TensorWrapper implements Surrogate {
 					featureData[k][j] = (float) rawData.get(i)[k][j];
 				}
 			}
-			System.out.println("Feeding tensor: " + tensorNames[i] + " with shape [" 
-					+ featureData.length + ", " + featureData[0].length + "]");
 
 			Tensor<Float> input = Tensor.create(featureData,Float.class);
 			runner.feed(tensorNames[i], input);
@@ -110,12 +108,10 @@ public class TensorWrapper implements Surrogate {
 			int nOut = (int) outShape[1];
 			float[][] out = new float[nBatch][nOut];
 			
-			
-			
 			outputTensor.copyTo(out);
 
 			//TODO This hardwires flooring to zero. Should eliminate and put this in TensorFlow
-			double xLowBound = 0.; //Small enough to be a floor for X2 and for EC
+			double xLowBound = 0.1; //Small enough to be a floor for X2 and for EC
 			for (int i = 0; i < out.length; i++) {
 				for (int j = 0; j < out[i].length; j++) {
 					out[i][j] = (float) Math.max(xLowBound, out[i][j]);
@@ -136,28 +132,6 @@ public class TensorWrapper implements Surrogate {
 	}
 
 
-
-	// Helper method to check for differences across batches for a given feature.
-	private void checkDifferencesAcrossBatches(float[][] featureData, int featureIndex) {
-		int nBatch = featureData.length;
-		int featureLen = featureData[0].length;
-		for (int t = 0; t < featureLen; t++) {
-			float refValue = featureData[0][t];
-			boolean differenceFound = false;
-			for (int b = 1; b < nBatch; b++) {
-				if (Math.abs(featureData[b][t] - refValue) > 1e-6) {
-					System.out.println("Difference in feature " + featureIndex +
-							" at time index " + t + ": batch 0 = " + refValue +
-							", batch " + b + " = " + featureData[b][t]);
-					differenceFound = true;
-				}
-			}
-			if (!differenceFound) {
-				System.out.println("Feature " + featureIndex + ", time index " + t +
-						" is consistent across all batches with value " + refValue);
-			}
-		}
-	}
 
 	public String getName() {
 		return tensorNames[0];

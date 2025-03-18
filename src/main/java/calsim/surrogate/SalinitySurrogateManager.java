@@ -426,12 +426,6 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	        int ave_type, int month, int year, double nth) {
 
 	    SurrogateMonth sm = getSurrogateForSite(location, ave_type);
-	    if (ave_type == AggregateMonths.NTH_SMALLEST.calsimCode) {
-	        sm.getAgg().setN((int) nth);
-	        System.out.println("requiredFlow data dump");
-	        DataDumper dumper = new DataDumper();
-	        dumper.dumpInputs(monthlyInputs);
-	    }
 
 	    int cyclePlaceholder = 0; // placeholder cycle
 	    int intInput0 = location;   // use location here
@@ -458,6 +452,8 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	    int flowIndex = 0;
 	    double req = ism.invert(target, monthlyInputs, flowIndex, flowLoBound, flowHiBound, 
 	                              year, month, location);
+	    
+	    System.out.println("target: " + target + " req="+req);
 	    if (req > flowHiBound) req = 999999.;
 	    if (req < flowLoBound) req = -999999.;
 	    float fReq = (float) req;

@@ -66,19 +66,19 @@ class MultivariatePracticalTest {
 		floatInput.add(smsg);		
 
 		double[][] est = annMonth.annMonth(floatInput, 1922, 8);
-		for (int ibatch = 0; ibatch < 1; ibatch++) {
-			for (int jtime = 0; jtime < 1; jtime++) {
+		for (int ibatch = 0; ibatch < est.length; ibatch++) {
+			for (int jloc = 0; jloc < est[0].length; jloc++) {
 				System.out.println(est[ibatch].length);
-				System.out.println("Out " + ibatch + "," + jtime + "  out: " + est[ibatch][jtime]);
+				System.out.println("Out " + ibatch + "," + jloc + "  out: " + est[ibatch][jloc]);
 			}
 		}
 
-		int year = 1924;
+		int year = 1922;
 		int month = 8;
 
-		int nx0 = 5;
-		int nx1 = 6;
-		GridResult grid = annMonth.evaluateOnGrid(floatInput, year, month, 5000.,25000.,nx0, 1000, 11000,  nx1);
+		int nx0 = 3;
+		int nx1 = 4;
+		GridResult grid = annMonth.evaluateOnGrid(floatInput, year, month, 5000.,25000.,nx0, 1000, 10000,  nx1);
 
 		int emmIndex = 8;
 		for (int i = 0; i<nx0; i++) {

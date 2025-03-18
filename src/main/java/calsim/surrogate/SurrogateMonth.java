@@ -259,8 +259,8 @@ public class SurrogateMonth {
        	// expand to ANN output location
     	double[][][] resultFullDim = expandLinear(result,nx0,nx1);
     	grid.setResult(resultFullDim); 
-        //System.out.println("In evaluateOnGrid");
-    	//System.out.println(grid.toString());
+        System.out.println("In evaluateOnGrid");
+    	System.out.println(grid.toString());
         return grid;
     }
 	
@@ -280,21 +280,20 @@ public class SurrogateMonth {
 
         int nBatchOrig = monthlyInputs.get(0).length;
         //System.out.println("Original batch size: "+ nBatchOrig);
-        // Assume each feature in monthlyInputs is a 1 x time array.
-        int time = monthlyInputs.get(0)[0].length;
-        System.out.println("time "+time);
+        // Assume each feature in monthlyInputs is a 1 x nMonth array.
+        int nMonth = monthlyInputs.get(0)[0].length;
         int gridBatch = nx0 * nx1;
         ArrayList<double[][]> newMonthlyInputs = new ArrayList<>();
         System.out.println("Imposing");
         // For each feature, create a new array with gridBatch rows.
         for (int f = 0; f < monthlyInputs.size(); f++) {
             double[][] original = monthlyInputs.get(f);
-            double[][] newFeature = new double[gridBatch][time];
+            double[][] newFeature = new double[gridBatch][nMonth];
             for (int i = 0; i < gridBatch; i++) {
                 // Decode the grid row and column indices.
                 int ix = i / nx1;
                 int iy = i % nx1;
-                for (int t = 0; t < time; t++) {
+                for (int t = 0; t < nMonth; t++) {
                     if ((f == 0) & (t==0)) {
                         // First feature gets its value from gridInput0 based on the row index.
                         newFeature[i][t] = gridInput0[ix];
@@ -494,9 +493,9 @@ public class SurrogateMonth {
 			}
 			expandedDaily.add(bigInput);
 		}
-		System.out.println("\n\n**********************\nDump Big"+nBigBatch);
-        DataDumper dumper = new DataDumper();
-        dumper.dumpInputs(expandedDaily);
+		//System.out.println("\n\n**********************\nDump Big"+nBigBatch);
+        //DataDumper dumper = new DataDumper();
+        //dumper.dumpInputs(expandedDaily);
 
         
 		// out is dimensioned nBigBatch x nOutput where nOutput is number of stations

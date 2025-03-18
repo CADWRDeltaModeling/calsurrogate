@@ -19,15 +19,15 @@ public class TensorWrapperTest {
     	String dataPath = dataFolder.getAbsolutePath();
     	
     	
-    	File modelFolder = ResourceUtils.extractResourceFolder(
-    	"/calsim/surrogate/ann/schism_base.suisun_gru2_tf");
-    	String modelPath = modelFolder.getAbsolutePath();
+    	//File modelFolder = ResourceUtils.extractResourceFolder(
+    	//  "/calsim/surrogate/ann/schism_base.suisun_gru2_tf");
+    	//String modelPath = modelFolder.getAbsolutePath();
     	
     	
     	// Produced without unscaling by h5_tf
     	//File modelFolder = ResourceUtils.extractResourceFolder(
     	//		"F:/ann_workspace/casanntra/example/base.suisun_debug");
-    	//String modelPath = "F:/ann_workspace/casanntra/example/base.suisun_debug";
+    	String modelPath = "F:/ann_workspace/casanntra/example/schism_base.suisun_gru2_tf";
 
         String[] tensorNames = { "serving_default_northern_flow:0", 
         		                 "serving_default_exports:0", 
