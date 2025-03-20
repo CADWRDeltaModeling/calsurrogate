@@ -34,6 +34,8 @@ flowchart LR
 
 ```	
 
+The calsurrogate project repo is [here]([http://example.com/](https://github.com/CADWRDeltaModeling/casanntra) "Title")
+An [example CalSim study]([http://example.com/](https://github.com/CADWRDeltaModeling/calsurrogate-test) "Title") is with the new surrogates. This example is not suitable for production study.
 
 Notes:
 # Repo for main example analogous to DCR
