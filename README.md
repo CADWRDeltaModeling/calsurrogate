@@ -35,7 +35,21 @@ flowchart LR
 ```	
 
 
+Notes:
+# Repo for main example analogous to DCR
+# Sequester the materials for eliminating NDOI and for making D-1641 small/large
+
+Todo:
+# Eliminate reduced_calls files, both at the station and the ANN level. 
+# Fix MRDO implementations. Use required_flow instead.
+# Fix X2 and find Fall X2
+# Deal with all the extra stations which we do/don't have implemented.
 
 
 
-There is no independent wiki. See https://github.com/water-e/calsim3-dcr/wiki
+
+
+
+
+
+
