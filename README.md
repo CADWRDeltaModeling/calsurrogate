@@ -23,11 +23,12 @@ flowchart LR
     casanntra --training--> tf[[TensorFlow 
                      Saved Model]]
     end
+
     subgraph CalSim Application
-    tf --> calsur@{shape: rect, label: "calsurrogate\nJava library"} 
+    tf --> calsur@{shape: rect, label: "calsurrogate\nJava library"}
     wresl[WRESL new linearization] --revised--> CalSim
     CalSim o--plugin jar--o calsur
-    wresl --->calsur
+    wresl ---> calsur
     end
 
 ```	
