@@ -1,10 +1,11 @@
 # calsurrogate
-calsurrogate is the plug-in library for implementing surrogates with wrappers, with TensorFlow being the current implementation at DWR. 
+calsurrogate is the plug-in library for implementing surrogates with wrappers, with TensorFlow being the prototype implementation 
 
 calsurrogate is part of an associated suite of tools
                                                                 
 ```mermaid
 
+%%{init: { "themeVariables": { "fontSize": "20px" } }}%%
 flowchart LR
     subgraph Model Simulations 
     doe[Design of experiments] ---> indsm2@{ shape: docs, label: "DSM2 Inputs"}
