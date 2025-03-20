@@ -5,7 +5,7 @@ calsurrogate is part of an associated suite of tools
                                                                 
 ```mermaid
 
-%%{init: { "themeVariables": { "fontSize": "20px" } }}%%
+%%{init: { "themeVariables": { "fontSize": "24px" } }}%%
 flowchart LR
     subgraph Model Simulations 
     doe[Design of experiments] ---> indsm2@{ shape: docs, label: "DSM2 Inputs"}
