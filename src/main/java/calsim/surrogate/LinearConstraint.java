@@ -126,9 +126,8 @@ public class LinearConstraint {
 		// and S0 is the corresponding salinity for those nominal values
 		// Reorganizing the above equation gives the actual constraints on Sac and Exp
 		// In terms of known quantities:
-		// dS/dSac* Sac + dS/dExp*Exp < (target - S0 + dS/dSac*Sac0 + dS/dExp*Exp0)
+		// dS/dSac* Sac + dS/dExp*Exp <= (target - S0 + dS/dSac*Sac0 + dS/dExp*Exp0)
 		// The variable rhs represents the total on the right
-		// for (int iLoc = 0)
 		double rhs = targetWQ - valGradient[LinearConstraint.VAL_NDX] + valGradient[LinearConstraint.DSAC_NDX] * sac0
 				+ valGradient[LinearConstraint.DEXP_NDX] * exp0;
 		double sacCoef = valGradient[LinearConstraint.DSAC_NDX];

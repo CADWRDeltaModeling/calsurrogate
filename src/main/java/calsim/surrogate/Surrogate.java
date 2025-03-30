@@ -28,6 +28,13 @@ public interface Surrogate extends DailyToSurrogate {
 	 * @return
 	 */
 	public default String identifier() {return "None";}
+
+	/**
+	 * Return a class string or file name that helps identify the surrogate
+	 * @return
+	 */
+	public default String getName() {return "None";}	
+	
 	
 	/**
 	 * Converts a forward-in-time time history with day of forecast at currentIndex

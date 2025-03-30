@@ -1,8 +1,9 @@
 package calsim.surrogate;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.logging.*;
+//import java.util.logging.*;
 
 
 /**
@@ -61,16 +62,16 @@ public class SurrogateMonth {
             assignments = createDefaultAssignments();
         }    	
     	
-    	// Replace any null assignments with UNASSIGNED.
-    	for (int i = 0; i < assignments.size(); i++) {
-    	    if (assignments.get(i) == null) {
-    	        assignments.set(i, ExogTimeSeriesAssignment.UNASSIGNED);
-    	    }
-    	}
-    	this.assignments = assignments;
+        // Make defensive copies to avoid cross-contamination between SurrogateMonth instances
+        List<ExogTimeSeriesAssignment> copied = new ArrayList<>();
+        for (ExogTimeSeriesAssignment a : assignments) {
+            copied.add(a == null ? ExogTimeSeriesAssignment.UNASSIGNED : new ExogTimeSeriesAssignment(a));
+        }
+        this.assignments = copied;
 
-    	// Check and resolve names/indexes for all concrete assignments.
-    	resolveAssignments(this.assignments, ExogenousTimeSeries.getInstance(), daily); 	
+        // Check and resolve names/indexes for all concrete assignments.
+        resolveAssignments(this.assignments, ExogenousTimeSeries.getInstance(), daily); 
+
 
     }
 
@@ -109,9 +110,9 @@ public class SurrogateMonth {
     private void resolveAssignments(List<ExogTimeSeriesAssignment> assignments, 
                                     ExogenousTimeSeries ets, 
                                     Surrogate surrogate) {
-        String expectedFileName = ets.getFileName();
+        //String expectedFileName = ets.getFileName();
         for (ExogTimeSeriesAssignment assign : assignments) {
-            if (assign != ExogTimeSeriesAssignment.UNASSIGNED) {
+        	if (!assign.isUnassigned()) {
                 // Check file name consistency.
                 //if (!assign.getFileName().equals(expectedFileName)) {
                 //    throw new IllegalArgumentException("Assignment file name " + assign.getFileName() +
@@ -187,7 +188,7 @@ public class SurrogateMonth {
         int fileColIndex = assign.getFileColumnIndex();
         
         // Verify file name consistency.
-        String expectedFileName = ExogenousTimeSeries.getInstance().getFileName();
+        //String expectedFileName = ExogenousTimeSeries.getInstance().getFileName();
         //if (!assign.getFileName().equals(expectedFileName)) {
         //    throw new IllegalArgumentException("Assignment file name " + assign.getFileName() +
         //        " is inconsistent with expected " + expectedFileName);
@@ -255,12 +256,19 @@ public class SurrogateMonth {
         		nx0, loBound1, hiBound1, nx1);
 
         // result has one batch member per grid member, second dim is ANN output location
-       	double[][] result = this.annMonth(grid.getMonthlyInputs(), year, month);
+    	ArrayList<double[][]> griddedInputs = grid.getMonthlyInputs();
+        //System.out.println("Evaluation inputs inside evaluateOnGrid");
+        //System.out.println(DebugUtils.arrToString(griddedInputs));
+        //System.out.println(DebugUtils.dimsToString(griddedInputs));
+        
+        double[][] result = this.annMonth(griddedInputs, year, month);
        	// expand to ANN output location
-    	double[][][] resultFullDim = expandLinear(result,nx0,nx1);
+
+       	double[][][] resultFullDim = expandLinear(result,nx0,nx1);
+    	//System.out.println("Evaluation result inside evaluateOnGrid");
+
+    	//System.out.println(DebugUtils.arrToString(result));
     	grid.setResult(resultFullDim); 
-        System.out.println("In evaluateOnGrid");
-    	System.out.println(grid.toString());
         return grid;
     }
 	
@@ -284,7 +292,6 @@ public class SurrogateMonth {
         int nMonth = monthlyInputs.get(0)[0].length;
         int gridBatch = nx0 * nx1;
         ArrayList<double[][]> newMonthlyInputs = new ArrayList<>();
-        System.out.println("Imposing");
         // For each feature, create a new array with gridBatch rows.
         for (int f = 0; f < monthlyInputs.size(); f++) {
             double[][] original = monthlyInputs.get(f);
@@ -367,14 +374,7 @@ public class SurrogateMonth {
 				loadExogenous(newInput,ivar,year,month,nday);
 			}else {
 				for (int jbatch = 0; jbatch < nbatch; jbatch++) {
-					if (nbatch==30 & ivar < 4 ) {
-   					  double[] dailyBatchVar = monthlyInputs.get(ivar)[jbatch];
-   					  int lend = dailyBatchVar.length;
-					  System.out.println("batch " +jbatch+" len "+lend+" 1st/Last sac/exp " 
-   					  + ivar + ": "+dailyBatchVar[0]  +" "+ dailyBatchVar[1] 
-   							  +" "+dailyBatchVar[lend-2]+ " " + dailyBatchVar[lend-1]);
-					}
-;					newInput[jbatch] = disagg[ivar].apply(year, month, monthlyInputs.get(ivar)[jbatch]);
+					newInput[jbatch] = disagg[ivar].apply(year, month, monthlyInputs.get(ivar)[jbatch]);
 				}
 			}
 			dailyInputs.add(newInput);			

@@ -59,11 +59,14 @@ class PracticalTest {
 	
 		int nx0 = 8;
 		int nx1 = 8;
-		GridResult grid = annMonth.evaluateOnGrid(floatInput, year, month, 4000.,25000.,nx0, 500, 12000,  nx1);
+		GridResult grid = annMonth.evaluateOnGrid(
+				floatInput, year, month, 4000.,25000.,nx0, 
+				500, 12000,  nx1);
 		
 		for (int i = 0; i<nx0; i++) {
 			for (int j=0; j<nx1; j++) {
-				System.out.println("x0="+grid.getGridInput0()[i]+" x1="+grid.getGridInput1()[j]+" res="+grid.getResult()[i][j][0]);			
+				System.out.println("At "+grid.getGridInput0()[i]+" x1="
+			         +grid.getGridInput1()[j]+" res="+grid.getResult()[i][j][0]);			
 			}
 		}
 		System.out.println("Done");

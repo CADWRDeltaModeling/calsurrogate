@@ -134,7 +134,7 @@ public class TensorWrapper implements Surrogate {
 
 
 	public String getName() {
-		return tensorNames[0];
+		return this.fpath;
 	}
 
 	@Override

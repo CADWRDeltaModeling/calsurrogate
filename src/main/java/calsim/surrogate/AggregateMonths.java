@@ -1,5 +1,6 @@
 package calsim.surrogate;
 
+import java.util.Arrays;
 
 /**
  * AggregateMonths provides methods to combine daily surrogate data into monthly scalars,
@@ -214,9 +215,8 @@ public enum AggregateMonths {
 
 			double[] ordered = new double[nval]; 
 			System.arraycopy(daily,startIndex,ordered,0,nval);
-
 			java.util.Arrays.sort(ordered);
-			double ret = ordered[this.num-1];
+			double ret = this.num > 0 ? ordered[this.num-1] : -9999.;
 			return ret;
 		}
 
@@ -234,16 +234,20 @@ public enum AggregateMonths {
 				int firstMonthIndex, 
 				int startDayOfMonth, int endDayOfMonth) {
 
-			int startIndex = firstMonthIndex + startDayOfMonth - 1;
-			int stopIndex = firstMonthIndex + endDayOfMonth;
-			double count = 0.;
-			startIndex = 0;  //TODO hardwired ... something is wrong here about indexes
-			stopIndex = endDayOfMonth;
+			int startIndex = 0; //firstMonthIndex + startDayOfMonth - 1;
+			int stopIndex = endDayOfMonth;
+			// stopIndex = firstMonthIndex + endDayOfMonth -1;
+			int nval = stopIndex - startIndex;
+			int count = 0;
+			//System.out.println("\n\n\n ===+++++_--++3#%@#@# Evaluating: thresh=" + this.threshold+ " daily= ");
+			//System.out.println(Arrays.toString(daily));
+			
 			for (int i = (startIndex); i < stopIndex; i++) {
-				if (daily[i] <= this.threshold+1e-13){
+				if (daily[i] <= this.threshold+1e-4){
 					count += 1;
 				}
 			}
+			//System.out.println("Count is "+count);
 			return count;
 		}
 

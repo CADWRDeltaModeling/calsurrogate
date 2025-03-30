@@ -44,7 +44,7 @@ class SurrogateLineSearcher extends BrentSolver{
 		this.inputs.get(0)[0][0]=x[0];
 		this.inputs.get(1)[0][0]=x[1];
         double[][] output = surrogate.annMonth(this.inputs, this.year, this.month);
-        return output[0][0] - target;
+        return output[0][iLoc] - target;
 	}	
 }
 
@@ -69,6 +69,7 @@ public class InverseSurrogateMonth {
 	 * @param searchIndex  Should be 0 (Sac) or 1 (Exports)
 	 * @param loBound Lower bound on search index
 	 * @param hiBound Upper bound on search index
+	 * @param iLoc index in the output tensor for component being inverted
 	 * @return value of non-fixed variable that meets target. Returns < loBound if answers 
 	 *         are all < target (all feasible and > hiBound if > target (exceedance)
 	 */

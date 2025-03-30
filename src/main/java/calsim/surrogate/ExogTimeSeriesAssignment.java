@@ -36,6 +36,20 @@ public class ExogTimeSeriesAssignment {
         }
     }
 
+    
+    /**
+     * Copy constructor copies application data but not internals. This class is not
+     * intended for re-use across surrogates.
+     * @param other
+     */
+    public ExogTimeSeriesAssignment(ExogTimeSeriesAssignment other) {
+        this.fileName = other.fileName;
+        this.fileColumn = other.fileColumn;
+        this.annInputName = other.annInputName;
+        this.fileColumnIndex = other.fileColumnIndex;
+        this.annInputIndex = other.annInputIndex;
+    }    
+    
     // Optionally, a full constructor is provided.
     public ExogTimeSeriesAssignment(String fileName, String fileColumn, int fileColumnIndex, int annInputIndex, String annInputName) {
         this.fileName = fileName;
@@ -45,6 +59,11 @@ public class ExogTimeSeriesAssignment {
         this.annInputName = annInputName;
     }
 
+    
+    public boolean isUnassigned() {
+        return "default".equals(this.annInputName);
+    }        
+    
     // Getters and setters
     public String getFileName() {
         return fileName;
@@ -67,6 +86,9 @@ public class ExogTimeSeriesAssignment {
     }
 
     public void setAnnInputIndex(int annInputIndex) {
+        if (this.annInputIndex >= 0) {
+            throw new IllegalStateException("annInputIndex already set. This time series assignment may have been reused.");
+        }
         this.annInputIndex = annInputIndex;
     }
 

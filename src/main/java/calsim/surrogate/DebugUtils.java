@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class DebugUtils {
@@ -87,4 +88,68 @@ public class DebugUtils {
         }
         return features;
     }
+    
+    
+    
+    public static String dimsToString(double[][][] arr) {
+        if (arr == null) return "null";
+        int d1 = arr.length;
+        int d2 = (d1 > 0) ? arr[0].length : 0;
+        int d3 = (d2 > 0) ? arr[0][0].length : 0;
+        return String.format("double[%d][%d][%d]", d1, d2, d3);
+    }
+
+    public static String dimsToString(double[][] arr) {
+        if (arr == null) return "null";
+        int d1 = arr.length;
+        int d2 = (d1 > 0) ? arr[0].length : 0;
+        return String.format("double[%d][%d]", d1, d2);
+    }
+
+    public static String dimsToString(ArrayList<double[][]> list) {
+        if (list == null) return "null";
+        int outer = list.size();
+        int inner = (outer > 0 && list.get(0) != null) ? list.get(0).length : 0;
+        int leaf = (inner > 0 && list.get(0)[0] != null) ? list.get(0)[0].length : 0;
+        return String.format("ArrayList<double[%d][%d]> x %d", inner, leaf, outer);
+    }
+
+    public static String arrToString(double[][][] arr) {
+        if (arr == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        sb.append(dimsToString(arr)).append(":\n");
+        for (int i = 0; i < arr.length; i++) {
+            sb.append("[").append(i).append("]:\n");
+            for (int j = 0; j < arr[i].length; j++) {
+                sb.append("  ").append(Arrays.toString(arr[i][j])).append("\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    public static String arrToString(double[][] arr) {
+        if (arr == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        sb.append(dimsToString(arr)).append(":\n");
+        for (int i = 0; i < arr.length; i++) {
+            sb.append("[").append(i).append("] ").append(Arrays.toString(arr[i])).append("\n");
+        }
+        return sb.toString();
+    }
+
+    public static String arrToString(ArrayList<double[][]> list) {
+        if (list == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        sb.append(dimsToString(list)).append(":\n");
+        for (int i = 0; i < list.size(); i++) {
+            sb.append("Item ").append(i).append(":\n");
+            double[][] arr = list.get(i);
+            for (int j = 0; j < arr.length; j++) {
+                sb.append("  ").append(Arrays.toString(arr[j])).append("\n");
+            }
+        }
+        return sb.toString();
+    }
+    
+    
 }

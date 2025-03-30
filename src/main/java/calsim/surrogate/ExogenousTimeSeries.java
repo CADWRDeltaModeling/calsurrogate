@@ -136,6 +136,8 @@ public class ExogenousTimeSeries {
         return dailyDataSlice(colIndex, year, month, day, nday);
     }
 
+
+    
     /**
      * Returns the start date of the time series.
      *
