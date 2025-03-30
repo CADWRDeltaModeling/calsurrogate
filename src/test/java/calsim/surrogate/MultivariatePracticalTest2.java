@@ -39,8 +39,8 @@ class MultivariatePracticalTest2 {
 			modelFolder = null;
 			modelPath = null;
 		}
-    	modelPath = "F:/ann_workspace/calsim_examples/calsurrogate-test/Run/External/ann/schism_base.suisun_gru2_tf";
-    	System.out.println(modelPath);
+    	//modelPath = "F:/ann_workspace/calsim_examples/calsurrogate-test/Run/External/ann/schism_base.suisun_gru2_tf";
+    	//System.out.println(modelPath);
 		SurrogateMonth annMonth = createSurrogateMonth(modelPath); 
 
 		double[][] sac = { { 4000.0, 40394.8495327244, 16904.736782425287, 18387.243181273156, 11176.84428360607 } };

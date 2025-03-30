@@ -34,7 +34,8 @@ class MultivariatePracticalTest {
     	File modelFolder;
     	String modelPath;
 		try {
-			modelFolder = ResourceUtils.extractResourceFolder("/calsim/surrogate/ann/schism_base.suisun_gru2_tf");
+			modelFolder = ResourceUtils.extractResourceFolder(
+					"/calsim/surrogate/ann/schism_base.suisun_gru2_tf");
 			modelPath = modelFolder.getAbsolutePath();
 			
 		} catch (IOException e) {
