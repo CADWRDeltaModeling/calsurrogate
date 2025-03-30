@@ -2,21 +2,16 @@ package calsim.surrogate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.Disabled;
+
 import org.junit.jupiter.api.Test;
 
-import calsim.surrogate.examples.ExampleExogAssignment;
-
-class MultivariatePracticalTest {
+class MultivariatePracticalTest2 {
 
 	private static final Map<Integer, Integer> outputIndexMap = new HashMap<>();	
 	static {
@@ -29,12 +24,14 @@ class MultivariatePracticalTest {
 		outputIndexMap.put(SalinitySurrogateManager.X2_CALSIM,  0);
 	}
 	
+
 	@Test
 	void test() {
     	File modelFolder;
     	String modelPath;
 		try {
-			modelFolder = ResourceUtils.extractResourceFolder("/calsim/surrogate/ann/schism_base.suisun_gru2_tf");
+			modelFolder = ResourceUtils.extractResourceFolder(
+					"/calsim/surrogate/ann/schism_base.suisun_gru2_tf");
 			modelPath = modelFolder.getAbsolutePath();
 			
 		} catch (IOException e) {
@@ -42,19 +39,19 @@ class MultivariatePracticalTest {
 			modelFolder = null;
 			modelPath = null;
 		}
-    	
-    	
+    	modelPath = "F:/ann_workspace/calsim_examples/calsurrogate-test/Run/External/ann/schism_base.suisun_gru2_tf";
+    	System.out.println(modelPath);
 		SurrogateMonth annMonth = createSurrogateMonth(modelPath); 
 
-		double[][] sac = { { 14765.289427181004,13478.35135024262,22344.084703109846,49641.401116570276,21677.466640999544 } };
-		double[][] exp = { { 3985.391312255339,4301.106028028918,9106.153016670627,7070.969778570741,5572.729092403552} };
-		double[][] sjr = { { 2442.5400684029796,3998.709350903452,3062.840526488872,1325.312129502397,2512.362226873918 } };
-		double[][] dcd = { { 1869.8758413461412,2605.369642928569,2337.711622751071,1622.9627999066765,1167.545973662801 } };
+		double[][] sac = { { 4000.0, 40394.8495327244, 16904.736782425287, 18387.243181273156, 11176.84428360607 } };
+		double[][] exp = { { 800.0, 9268.207178936515, 7433.307327963787, 8700.852304620485, 8813.182222637366} };
+		double[][] sjr = { {8047.182345502621, 6938.933071864789, 2569.522783672705, 3883.330625419198, 1611.7923252073938 } };
+		double[][] dcd = { { 252.81939240422022, -2083.7049238257737, 213.23777265386423, -617.069992293113, 1574.412246034835 } };
 
 		double[][] tidal_energy = { { 6.56,6.184,5.508,5.083,6.913 } };
 		double[][] tidal_filter = { { 6.56,6.184,5.508,5.083,6.913 } };		
-		double[][] smsg = { { 0.0,0.0,1.0,1.0,1.0 } };
-		double[][] dcc = { { 31.0,27.0,0.0,0.0,0.0 } };		
+		double[][] smsg = { { 1.0,01.0,1.0,0.0,0.0 } };
+		double[][] dcc = { { 0.0,0.0,0.0,10.0,20.0 } };		
 		ArrayList<double[][]> floatInput = new ArrayList<double[][]>();
 		floatInput.add(sac);
 		floatInput.add(exp);
@@ -75,11 +72,14 @@ class MultivariatePracticalTest {
 		}
 
 		int year = 1922;
-		int month = 8;
+		int month = 3;
 
 		int nx0 = 3;
 		int nx1 = 4;
-		GridResult grid = annMonth.evaluateOnGrid(floatInput, year, month, 5000.,25000.,nx0, 1000, 10000,  nx1);
+		double loBound0 = 4000, hiBound0 = 22000;
+		double loBound1 = 800., hiBound1 = 12800;
+		GridResult grid = annMonth.evaluateOnGrid(floatInput, year, month, 
+				            loBound0,hiBound0,nx0, loBound1, hiBound1,  nx1);
 
 		int emmIndex = 8;
 		for (int i = 0; i<nx0; i++) {
@@ -100,7 +100,7 @@ class MultivariatePracticalTest {
 				"serving_default_smscg:0", };
 
 		String[] tensorNamesInt = new String[0];
-		String outName = "StatefulPartitionedCall:2";
+		String outName = "StatefulPartitionedCall:1";
 		boolean reverse = false;
 		DailyToSurrogate dayToANN = new DailyToSurrogateDefault(90,reverse);
 		Surrogate wrap = new TensorWrapper(fname, tensorNames, tensorNamesInt, outName, dayToANN);
@@ -145,6 +145,5 @@ class MultivariatePracticalTest {
 		}		
 		return annMonth;
 	}
-
 
 }
