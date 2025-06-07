@@ -79,6 +79,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 	public static final int TRP_CALSIM = 10; // CVP Tracy Intake 
 	public static final int CCF_CALSIM = 11; // Clifton Court
 	public static final int CCI_CALSIM = 12; // Clifton Court Intake near CC Ferry
+	public static final int BAC_CALSIM = 15; // Old R. at Bacon Island (Rock Slough)		
 	public static final int BDL_CALSIM = 20; // Beldons Landing
 	public static final int MRZ_CALSIM = 21; // Martinez
 	public static final int X2_CALSIM =  30; // X2
@@ -99,6 +100,7 @@ public enum SalinitySurrogateManager { // ENUM is used to ensure singleton
 		LOCATION_MAP.put(TRP_CALSIM, "TRP");
 		LOCATION_MAP.put(CCF_CALSIM, "CCF");
 		LOCATION_MAP.put(CCI_CALSIM, "CCI");
+		LOCATION_MAP.put(BAC_CALSIM, "BAC");		
 		LOCATION_MAP.put(BDL_CALSIM, "BDL");
 		LOCATION_MAP.put(MRZ_CALSIM, "MRZ");
 		LOCATION_MAP.put(X2_CALSIM, "X2");

@@ -71,6 +71,9 @@ public enum AggregateMonths {
 			return total/fnday;
 		}
 	},
+
+	
+	
 	/**
 	 * Aggregates daily data by selecting the maximum daily value over the specified monthly window.
 	 *
@@ -141,6 +144,48 @@ public enum AggregateMonths {
 			return max;
 		}
 	},	
+	/**
+	 * Aggregates daily data into the mean of the last 7d.
+	 *
+	 * <p>This method computes the mean by summing the daily values over the window defined by:
+	 * <code>firstMonthIndex + startDayOfMonth - 1</code> (inclusive) up to 
+	 * <code>firstMonthIndex + endDayOfMonth</code> (exclusive), and dividing by the number of days in 
+	 * that window.
+	 * </p>
+	 *
+	 * <p>
+	 * <strong>Note:</strong> For a "true" monthly mean, the aggregation should cover the entire calendar month.
+	 * This requires that <code>startDayOfMonth</code> is set to 1 and <code>endDayOfMonth</code> is set to the
+	 * number of calendar days in the month (e.g., 28, 30, or 31). If different values are provided, the mean
+	 * will be computed over a partial period.
+	 * </p>
+	 *
+	 * @param daily           the array of daily surrogate data.
+	 * @param firstMonthIndex the index in the daily array corresponding to the first day of the current month.
+	 * @param startDayOfMonth the starting day (1-based) within the month for aggregation.
+	 * @param endDayOfMonth   the ending day (1-based) within the month for aggregation.
+	 * @return the mean of the daily values in the specified window.
+	 */
+	AVE_LAST_7D(37,"mean last seven days of month") {
+
+		@Override
+		public double aggregate(double[] daily, int firstMonthIndex, 
+				int startDayOfMonth, int endDayOfMonth) {
+
+			int startIndex = firstMonthIndex + startDayOfMonth - 1;
+			int stopIndex = firstMonthIndex + endDayOfMonth;
+
+			double total = 0.;
+			startIndex = endDayOfMonth-7;
+			stopIndex = endDayOfMonth; // TODO THis won't work for averages that reach back before first
+			double fnday = (double)(stopIndex-startIndex);
+
+			for (int i = startIndex; i < stopIndex; i++) {
+				total += daily[i];
+			}
+			return total/fnday;
+		}
+	},		
 	/**
 	 * Computes the maximum of a 14-day backward-looking running average over the specified period.
 	 *

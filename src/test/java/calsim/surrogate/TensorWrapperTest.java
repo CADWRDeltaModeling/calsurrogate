@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class TensorWrapperTest {
-
+	
     @Test
     public void testBatchDifferences() throws IOException {
         // --- Setup model and input names ---
